@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const AdminLayout: React.FC = () => {
@@ -11,28 +11,67 @@ const AdminLayout: React.FC = () => {
     navigate('/login');
   };
 
+  const activeLinkStyle = {
+    backgroundColor: '#4f46e5',
+    color: 'white',
+  };
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside style={{ width: '250px', background: '#2c3e50', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-        <div>
-            <h2>Lumiere Admin</h2>
-            <nav>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-                <li style={{ marginBottom: '10px' }}><Link to="/admin" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link></li>
-                <li style={{ marginBottom: '10px' }}><Link to="/admin/products" style={{ color: 'white', textDecoration: 'none' }}>Quản lý sản phẩm</Link></li>
-                {}
-            </ul>
-            </nav>
+    <div className="flex min-h-screen bg-gray-100 font-sans">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-800 text-white flex flex-col">
+        <div className="text-2xl font-bold p-4 border-b border-gray-700">
+          Lumiere Admin
         </div>
-        <div style={{ marginTop: 'auto' }}>
-            <p>Đăng nhập với: {user?.sub}</p>
-            <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <nav className="flex-grow p-2">
+          <NavLink
+            to="/admin"
+            end
+            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+            className="block px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/admin/products"
+            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+            className="block px-4 py-2 rounded-md hover:bg-gray-700 transition-colors mt-1"
+          >
+            Quản lý sản phẩm
+          </NavLink>
+          <NavLink to="/admin/orders" className={({ isActive }) => `block px-4 py-2 rounded-md ${isActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            Quản lý Đơn hàng
+          </NavLink>
+          <NavLink to="/admin/customers" className={({ isActive }) => `block px-4 py-2 rounded-md ${isActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            Quản lý Khách hàng
+          </NavLink>
+          <NavLink to="/admin/warehouses" className={({ isActive }) => `block px-4 py-2 rounded-md ${isActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            Quản lý Kho
+          </NavLink>
+          <NavLink to="/admin/inventory" className={({ isActive }) => `block px-4 py-2 rounded-md ${isActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            Quản lý Tồn kho
+          </NavLink>
+          <NavLink to="/admin/vouchers" className={({ isActive }) => `block px-4 py-2 rounded-md ${isActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            Quản lý Khuyến mãi
+          </NavLink>
+        </nav>
+        
+        <div className="p-4 border-t border-gray-700">
+            <p className="text-sm">Đăng nhập với: <strong>{user?.sub}</strong></p>
+            <button 
+              onClick={handleLogout} 
+              className="w-full mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-semibold"
+            >
                 Đăng xuất
             </button>
         </div>
       </aside>
-      <main style={{ flex: 1, padding: '20px', background: '#f4f6f9' }}>
-        <Outlet />
+
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -1,0 +1,341 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "code": "TSHIRT-001",
+      "name": "Áo Thun Cotton Cơ Bản",
+      "slug": "ao-thun-cotton-co-ban",
+      "description": "Áo thun làm từ 100% cotton thoáng mát, phù hợp cho mọi hoạt động hàng ngày.",
+      "status": "ACTIVE",
+      "category": "Áo Thun",
+      "createdAt": "2023-10-01T10:00:00Z",
+      "updatedAt": "2023-10-26T11:00:00Z",
+      "variants": [
+        { "id": 101, "productId": 1, "sku": "TSHIRT-001-BLK-S", "name": "Áo Thun Cotton Cơ Bản - Đen, S", "price": 250000, "compareAtPrice": 300000, "currency": "VND", "stockQuantity": 100, "isDefault": true, "color": "Đen" },
+        { "id": 102, "productId": 1, "sku": "TSHIRT-001-BLK-M", "name": "Áo Thun Cotton Cơ Bản - Đen, M", "price": 250000, "currency": "VND", "stockQuantity": 150, "isDefault": false, "color": "Đen" },
+        { "id": 103, "productId": 1, "sku": "TSHIRT-001-WHT-M", "name": "Áo Thun Cotton Cơ Bản - Trắng, M", "price": 250000, "currency": "VND", "stockQuantity": 120, "isDefault": false, "color": "Trắng" }
+      ]
+    },
+    {
+      "id": 2,
+      "code": "JEAN-001",
+      "name": "Quần Jeans Slim-fit",
+      "slug": "quan-jeans-slim-fit",
+      "description": "Quần jeans dáng ôm, co giãn tốt, mang lại vẻ ngoài hiện đại và năng động.",
+      "status": "ACTIVE",
+      "category": "Quần Jeans",
+      "createdAt": "2023-10-02T14:00:00Z",
+      "updatedAt": "2023-10-26T15:00:00Z",
+      "variants": [
+        { "id": 201, "productId": 2, "sku": "JEAN-001-BLU-30", "name": "Quần Jeans Slim-fit - Xanh, 30", "price": 550000, "currency": "VND", "stockQuantity": 80, "isDefault": true, "color": "Xanh dương" },
+        { "id": 202, "productId": 2, "sku": "JEAN-001-BLU-32", "name": "Quần Jeans Slim-fit - Xanh, 32", "price": 550000, "currency": "VND", "stockQuantity": 70, "isDefault": false, "color": "Xanh dương" }
+      ]
+    },
+    {
+      "id": 3,
+      "code": "HOODIE-001",
+      "name": "Áo Hoodie Nỉ Bông",
+      "slug": "ao-hoodie-ni-bong",
+      "description": "Áo hoodie ấm áp với lớp nỉ bông mềm mại, có mũ trùm và túi kangaroo tiện lợi.",
+      "status": "INACTIVE",
+      "category": "Áo Khoác",
+      "createdAt": "2023-09-15T09:00:00Z",
+      "updatedAt": "2023-10-20T10:00:00Z",
+      "variants": []
+    },
+    {
+      "id": 4,
+      "code": "DRESS-001",
+      "name": "Váy Hoa Mùa Hè",
+      "slug": "vay-hoa-mua-he",
+      "description": "Váy maxi hoa văn nhẹ nhàng, chất liệu voan thoáng mát, lý tưởng cho những ngày hè.",
+      "status": "ACTIVE",
+      "category": "Váy",
+      "createdAt": "2023-10-10T09:00:00Z",
+      "updatedAt": "2023-10-27T10:00:00Z",
+      "variants": [
+        { "id": 401, "productId": 4, "sku": "DRESS-001-FLR-S", "name": "Váy Hoa Mùa Hè - Hoa, S", "price": 750000, "currency": "VND", "stockQuantity": 50, "isDefault": true, "color": "Vàng" },
+        { "id": 402, "productId": 4, "sku": "DRESS-001-FLR-M", "name": "Váy Hoa Mùa Hè - Hoa, M", "price": 750000, "currency": "VND", "stockQuantity": 60, "isDefault": false, "color": "Vàng" }
+      ]
+    },
+    {
+      "id": 5,
+      "code": "SHIRT-001",
+      "name": "Áo Sơ Mi Oxford",
+      "slug": "ao-so-mi-oxford",
+      "description": "Áo sơ mi nam classic, vải oxford cao cấp, form regular fit.",
+      "status": "ACTIVE",
+      "category": "Áo Sơ Mi",
+      "createdAt": "2023-10-12T11:00:00Z",
+      "updatedAt": "2023-10-25T12:00:00Z",
+      "variants": [
+        { "id": 501, "productId": 5, "sku": "SHIRT-001-WHT-L", "name": "Áo Sơ Mi Oxford - Trắng, L", "price": 450000, "currency": "VND", "stockQuantity": 90, "isDefault": true, "color": "Trắng" }
+      ]
+    },
+    {
+      "id": 6,
+      "code": "JACKET-001",
+      "name": "Áo Khoác Bomber Kaki",
+      "slug": "ao-khoac-bomber-kaki",
+      "description": "Áo khoác bomber chất liệu kaki hai lớp, phong cách trẻ trung, năng động.",
+      "status": "ACTIVE",
+      "category": "Áo Khoác",
+      "createdAt": "2023-11-01T10:00:00Z",
+      "updatedAt": "2023-11-01T11:00:00Z",
+      "variants": [
+        { "id": 601, "productId": 6, "sku": "JACKET-001-GRN-M", "name": "Áo Khoác Bomber Kaki - Xanh Rêu, M", "price": 680000, "currency": "VND", "stockQuantity": 75, "isDefault": true, "color": "Xanh dương" },
+        { "id": 602, "productId": 6, "sku": "JACKET-001-BLK-L", "name": "Áo Khoác Bomber Kaki - Đen, L", "price": 680000, "currency": "VND", "stockQuantity": 60, "isDefault": false, "color": "Đen" }
+      ]
+    },
+    {
+      "id": 7,
+      "code": "SLEEP-001",
+      "name": "Bộ Đồ Ngủ Pijama Lụa",
+      "slug": "bo-do-ngu-pijama-lua",
+      "description": "Bộ pijama lụa satin mềm mại, mang lại cảm giác thoải mái tối đa khi ngủ.",
+      "status": "ACTIVE",
+      "category": "Đồ Ngủ",
+      "createdAt": "2023-11-02T14:00:00Z",
+      "updatedAt": "2023-11-02T15:00:00Z",
+      "variants": [
+        { "id": 701, "productId": 7, "sku": "SLEEP-001-PNK-S", "name": "Bộ Đồ Ngủ Pijama Lụa - Hồng Pastel, S", "price": 420000, "currency": "VND", "stockQuantity": 100, "isDefault": true, "color": "Hồng" }
+      ]
+    },
+    {
+      "id": 8,
+      "code": "TSHIRT-002",
+      "name": "Áo Thun In Họa Tiết",
+      "slug": "ao-thun-in-hoa-tiet",
+      "description": "Áo thun cotton in họa tiết độc đáo, thể hiện cá tính riêng của bạn.",
+      "status": "ACTIVE",
+      "category": "Áo Thun",
+      "createdAt": "2023-11-03T09:00:00Z",
+      "updatedAt": "2023-11-03T10:00:00Z",
+      "variants": [
+        { "id": 801, "productId": 8, "sku": "TSHIRT-002-GRY-M", "name": "Áo Thun In Họa Tiết - Xám, M", "price": 320000, "currency": "VND", "stockQuantity": 88, "isDefault": true, "color": "Xám" }
+      ]
+    },
+    {
+      "id": 9,
+      "code": "JEAN-002",
+      "name": "Quần Jeans Baggy",
+      "slug": "quan-jeans-baggy",
+      "description": "Quần jeans baggy cạp cao, phong cách retro, thoải mái và cá tính.",
+      "status": "ACTIVE",
+      "category": "Quần Jeans",
+      "createdAt": "2023-11-04T11:00:00Z",
+      "updatedAt": "2023-11-04T12:00:00Z",
+      "variants": [
+        { "id": 901, "productId": 9, "sku": "JEAN-002-LBL-28", "name": "Quần Jeans Baggy - Xanh Nhạt, 28", "price": 600000, "currency": "VND", "stockQuantity": 95, "isDefault": true, "color": "Xanh dương" }
+      ]
+    },
+    {
+      "id": 10,
+      "code": "DRESS-002",
+      "name": "Váy Suông Cổ Sơ Mi",
+      "slug": "vay-suong-co-so-mi",
+      "description": "Váy dáng suông thanh lịch, cổ sơ mi, phù hợp cho môi trường công sở.",
+      "status": "ACTIVE",
+      "category": "Váy",
+      "createdAt": "2023-11-05T15:00:00Z",
+      "updatedAt": "2023-11-05T16:00:00Z",
+      "variants": [
+        { "id": 1001, "productId": 10, "sku": "DRESS-002-NVY-M", "name": "Váy Suông Cổ Sơ Mi - Xanh Navy, M", "price": 890000, "currency": "VND", "stockQuantity": 40, "isDefault": true, "color": "Xanh dương" }
+      ]
+    },
+    {
+      "id": 11,
+      "code": "SHIRT-002",
+      "name": "Áo Sơ Mi Kẻ Caro",
+      "slug": "ao-so-mi-ke-caro",
+      "description": "Áo sơ mi vải flannel họa tiết kẻ caro, ấm áp và thời trang.",
+      "status": "ACTIVE",
+      "category": "Áo Sơ Mi",
+      "createdAt": "2023-11-06T10:00:00Z",
+      "updatedAt": "2023-11-06T11:00:00Z",
+      "variants": [
+        { "id": 1101, "productId": 11, "sku": "SHIRT-002-RED-L", "name": "Áo Sơ Mi Kẻ Caro - Đỏ Đen, L", "price": 480000, "currency": "VND", "stockQuantity": 65, "isDefault": true, "color": "Đỏ" }
+      ]
+    },
+    {
+      "id": 12,
+      "code": "JACKET-002",
+      "name": "Áo Khoác Denim Rách Gối",
+      "slug": "ao-khoac-denim-rach-goi",
+      "description": "Áo khoác denim bụi bặm với chi tiết rách nhẹ, không bao giờ lỗi mốt.",
+      "status": "ACTIVE",
+      "category": "Áo Khoác",
+      "createdAt": "2023-11-07T14:00:00Z",
+      "updatedAt": "2023-11-07T15:00:00Z",
+      "variants": [
+        { "id": 1201, "productId": 12, "sku": "JACKET-002-BLU-M", "name": "Áo Khoác Denim Rách Gối - Xanh, M", "price": 720000, "currency": "VND", "stockQuantity": 55, "isDefault": true, "color": "Xanh dương" }
+      ]
+    },
+    {
+      "id": 13,
+      "code": "SLEEP-002",
+      "name": "Váy Ngủ Hai Dây",
+      "slug": "vay-ngu-hai-day",
+      "description": "Váy ngủ hai dây chất liệu voan mềm mại, quyến rũ và thoải mái.",
+      "status": "ACTIVE",
+      "category": "Đồ Ngủ",
+      "createdAt": "2023-11-08T16:00:00Z",
+      "updatedAt": "2023-11-08T17:00:00Z",
+      "variants": [
+        { "id": 1301, "productId": 13, "sku": "SLEEP-002-BLK-M", "name": "Váy Ngủ Hai Dây - Đen, M", "price": 350000, "currency": "VND", "stockQuantity": 80, "isDefault": true, "color": "Đen" }
+      ]
+    },
+    {
+      "id": 14,
+      "code": "TSHIRT-003",
+      "name": "Áo Thun Cổ Lọ Dài Tay",
+      "slug": "ao-thun-co-lo-dai-tay",
+      "description": "Áo thun cotton co giãn, cổ lọ, thích hợp mặc lót vào mùa đông.",
+      "status": "ACTIVE",
+      "category": "Áo Thun",
+      "createdAt": "2023-11-09T09:00:00Z",
+      "updatedAt": "2023-11-09T10:00:00Z",
+      "variants": [
+        { "id": 1401, "productId": 14, "sku": "TSHIRT-003-WHT-S", "name": "Áo Thun Cổ Lọ Dài Tay - Trắng, S", "price": 290000, "currency": "VND", "stockQuantity": 110, "isDefault": true, "color": "Trắng" }
+      ]
+    },
+    {
+      "id": 15,
+      "code": "JEAN-003",
+      "name": "Quần Jeans Ống Rộng",
+      "slug": "quan-jeans-ong-rong",
+      "description": "Quần jeans ống rộng (culottes), cạp cao, mang lại vẻ ngoài thời thượng.",
+      "status": "ACTIVE",
+      "category": "Quần Jeans",
+      "createdAt": "2023-11-10T11:00:00Z",
+      "updatedAt": "2023-11-10T12:00:00Z",
+      "variants": [
+        { "id": 1501, "productId": 15, "sku": "JEAN-003-BLK-29", "name": "Quần Jeans Ống Rộng - Đen, 29", "price": 620000, "currency": "VND", "stockQuantity": 70, "isDefault": true, "color": "Đen" }
+      ]
+    },
+    {
+      "id": 16,
+      "code": "DRESS-003",
+      "name": "Váy Babydoll Dễ Thương",
+      "slug": "vay-babydoll-de-thuong",
+      "description": "Váy babydoll dáng xòe, họa tiết hoa nhí, phong cách ngọt ngào.",
+      "status": "ACTIVE",
+      "category": "Váy",
+      "createdAt": "2023-11-11T15:00:00Z",
+      "updatedAt": "2023-11-11T16:00:00Z",
+      "variants": [
+        { "id": 1601, "productId": 16, "sku": "DRESS-003-YEL-S", "name": "Váy Babydoll Dễ Thương - Vàng, S", "price": 580000, "currency": "VND", "stockQuantity": 60, "isDefault": true, "color": "Vàng" }
+      ]
+    },
+    {
+      "id": 17,
+      "code": "SHIRT-003",
+      "name": "Áo Sơ Mi Lụa Cổ Đức",
+      "slug": "ao-so-mi-lua-co-duc",
+      "description": "Áo sơ mi lụa cao cấp, mềm mại, bóng nhẹ, sang trọng.",
+      "status": "ACTIVE",
+      "category": "Áo Sơ Mi",
+      "createdAt": "2023-11-12T10:00:00Z",
+      "updatedAt": "2023-11-12T11:00:00Z",
+      "variants": [
+        { "id": 1701, "productId": 17, "sku": "SHIRT-003-CRM-M", "name": "Áo Sơ Mi Lụa Cổ Đức - Kem, M", "price": 750000, "currency": "VND", "stockQuantity": 45, "isDefault": true, "color": "Trắng" }
+      ]
+    },
+    {
+      "id": 18,
+      "code": "JACKET-003",
+      "name": "Áo Khoác Cardigan Len",
+      "slug": "ao-khoac-cardigan-len",
+      "description": "Áo khoác len cardigan mỏng nhẹ, phù hợp cho thời tiết se lạnh.",
+      "status": "ACTIVE",
+      "category": "Áo Khoác",
+      "createdAt": "2023-11-13T14:00:00Z",
+      "updatedAt": "2023-11-13T15:00:00Z",
+      "variants": [
+        { "id": 1801, "productId": 18, "sku": "JACKET-003-BGE-F", "name": "Áo Khoác Cardigan Len - Be, Freesize", "price": 530000, "currency": "VND", "stockQuantity": 85, "isDefault": true, "color": "Be" }
+      ]
+    },
+    {
+      "id": 19,
+      "code": "SLEEP-003",
+      "name": "Bộ Đồ Ngủ Cotton In Hình",
+      "slug": "bo-do-ngu-cotton-in-hinh",
+      "description": "Bộ đồ ngủ cotton thoáng mát, in hình dễ thương, mang lại giấc ngủ ngon.",
+      "status": "ACTIVE",
+      "category": "Đồ Ngủ",
+      "createdAt": "2023-11-14T16:00:00Z",
+      "updatedAt": "2023-11-14T17:00:00Z",
+      "variants": [
+        { "id": 1901, "productId": 19, "sku": "SLEEP-003-CAT-M", "name": "Bộ Đồ Ngủ Cotton In Hình - Mèo, M", "price": 380000, "currency": "VND", "stockQuantity": 120, "isDefault": true, "color": "Xám" }
+      ]
+    },
+    {
+      "id": 20,
+      "code": "TSHIRT-004",
+      "name": "Áo Thun Polo",
+      "slug": "ao-thun-polo",
+      "description": "Áo thun polo vải cá sấu, lịch sự và thoải mái.",
+      "status": "ACTIVE",
+      "category": "Áo Thun",
+      "createdAt": "2023-11-15T09:00:00Z",
+      "updatedAt": "2023-11-15T10:00:00Z",
+      "variants": [
+        { "id": 2001, "productId": 20, "sku": "TSHIRT-004-NVY-L", "name": "Áo Thun Polo - Xanh Navy, L", "price": 400000, "currency": "VND", "stockQuantity": 90, "isDefault": true, "color": "Xanh dương" }
+      ]
+    }
+  ],
+  "orders": [
+    { "id": 1, "customerId": 1, "code": "ORD-20231026-001", "status": "COMPLETED", "paymentStatus": "PAID", "fulfillmentStatus": "FULFILLED", "totalAmount": 800000, "currency": "VND", "note": "Giao hàng nhanh giúp mình.", "placedAt": "2023-10-26T10:05:00Z" },
+    { "id": 2, "customerId": 2, "code": "ORD-20231026-002", "status": "PENDING", "paymentStatus": "UNPAID", "fulfillmentStatus": "UNFULFILLED", "totalAmount": 250000, "currency": "VND", "placedAt": "2023-10-26T11:30:00Z" },
+    { "id": 3, "customerId": 1, "code": "ORD-20231027-003", "status": "PENDING", "paymentStatus": "UNPAID", "fulfillmentStatus": "PREPARING", "totalAmount": 750000, "currency": "VND", "note": "", "placedAt": "2023-10-27T08:45:00Z" }
+  ],
+  "orderItems": [
+    { "id": 1, "orderId": 1, "variantId": 102, "quantity": 1, "unitPrice": 250000, "totalPrice": 250000 },
+    { "id": 2, "orderId": 1, "variantId": 201, "quantity": 1, "unitPrice": 550000, "totalPrice": 550000 },
+    { "id": 3, "orderId": 2, "variantId": 103, "quantity": 1, "unitPrice": 250000, "totalPrice": 250000 },
+    { "id": 4, "orderId": 3, "variantId": 401, "quantity": 1, "unitPrice": 750000, "totalPrice": 750000 }
+  ],
+  "customers": [
+    { "id": 1, "firstName": "An", "lastName": "Nguyễn Văn", "email": "an.nguyen@example.com", "phone": "0901234567", "address": "123 Đường Lê Lợi, Quận 1, TP. HCM", "tier": "GOLD" },
+    { "id": 2, "firstName": "Bình", "lastName": "Trần Thị", "email": "binh.tran@example.com", "phone": "0912345678", "address": "456 Đường CMT8, Quận 3, TP. HCM", "tier": "SILVER" },
+    { "id": 3, "firstName": "Cường", "lastName": "Phạm Văn", "email": "cuong.pham@example.com", "phone": "0987654321", "address": "789 Đường 3/2, Quận 10, TP. HCM", "tier": "BRONZE" }
+  ],
+  "warehouses": [
+    { "id": 1, "name": "Kho Trung Tâm", "address": "Khu công nghiệp Tân Bình, TP. HCM", "isActive": true },
+    { "id": 2, "name": "Kho Vệ Tinh", "address": "Khu công nghiệp Sóng Thần, Bình Dương", "isActive": true }
+  ],
+  "vouchers": [
+    { "id": 1, "code": "LUMIERE10", "type": "PERCENTAGE", "value": 10, "status": "ACTIVE", "startDate": "2023-10-01T00:00:00Z", "endDate": "2025-12-31T23:59:59Z", "usageLimit": 1000, "usageCount": 150 },
+    { "id": 2, "code": "FREESHIP", "type": "FIXED_AMOUNT", "value": 30000, "status": "ACTIVE", "startDate": null, "endDate": null, "usageLimit": null, "usageCount": 320 },
+    { "id": 3, "code": "SALE50K", "type": "FIXED_AMOUNT", "value": 50000, "status": "EXPIRED", "startDate": "2023-09-01T00:00:00Z", "endDate": "2023-09-30T23:59:59Z", "usageLimit": 500, "usageCount": 500 }
+  ],
+  "inventories": [
+    {"id": 1, "productVariantId": 101, "warehouseId": 1, "stockQuantity": 60},
+    {"id": 2, "productVariantId": 101, "warehouseId": 2, "stockQuantity": 40},
+    {"id": 3, "productVariantId": 102, "warehouseId": 1, "stockQuantity": 100},
+    {"id": 4, "productVariantId": 102, "warehouseId": 2, "stockQuantity": 50},
+    {"id": 5, "productVariantId": 103, "warehouseId": 1, "stockQuantity": 120},
+    {"id": 6, "productVariantId": 201, "warehouseId": 1, "stockQuantity": 80},
+    {"id": 7, "productVariantId": 202, "warehouseId": 1, "stockQuantity": 70},
+    {"id": 8, "productVariantId": 401, "warehouseId": 1, "stockQuantity": 50},
+    {"id": 9, "productVariantId": 402, "warehouseId": 2, "stockQuantity": 60},
+    {"id": 10, "productVariantId": 501, "warehouseId": 1, "stockQuantity": 90},
+    {"id": 11, "productVariantId": 601, "warehouseId": 1, "stockQuantity": 75},
+    {"id": 12, "productVariantId": 602, "warehouseId": 2, "stockQuantity": 60},
+    {"id": 13, "productVariantId": 701, "warehouseId": 1, "stockQuantity": 100},
+    {"id": 14, "productVariantId": 801, "warehouseId": 1, "stockQuantity": 88},
+    {"id": 15, "productVariantId": 901, "warehouseId": 2, "stockQuantity": 95},
+    {"id": 16, "productVariantId": 1001, "warehouseId": 1, "stockQuantity": 40},
+    {"id": 17, "productVariantId": 1101, "warehouseId": 1, "stockQuantity": 65},
+    {"id": 18, "productVariantId": 1201, "warehouseId": 2, "stockQuantity": 55},
+    {"id": 19, "productVariantId": 1301, "warehouseId": 1, "stockQuantity": 80},
+    {"id": 20, "productVariantId": 1401, "warehouseId": 1, "stockQuantity": 110},
+    {"id": 21, "productVariantId": 1501, "warehouseId": 2, "stockQuantity": 70},
+    {"id": 22, "productVariantId": 1601, "warehouseId": 1, "stockQuantity": 60},
+    {"id": 23, "productVariantId": 1701, "warehouseId": 1, "stockQuantity": 45},
+    {"id": 24, "productVariantId": 1801, "warehouseId": 2, "stockQuantity": 85},
+    {"id": 25, "productVariantId": 1901, "warehouseId": 1, "stockQuantity": 120},
+    {"id": 26, "productVariantId": 2001, "warehouseId": 1, "stockQuantity": 90}
+  ]
+}
+

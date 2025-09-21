@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import axiosClient from '../../api/axiosClient';
+import { mockAdminToken, mockUserToken } from '../../mocks/auth';
+
+const IS_MOCK_MODE = true;
 
 const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -13,6 +16,23 @@ const LoginPage: React.FC = () => {
     const location = useLocation();
 
     const from = location.state?.from?.pathname || "/";
+
+    const handleLoginSuccess = (token: string) => {
+        auth.login(token);
+        setTimeout(() => {
+            try {
+                const decodedToken: { auth: string } = JSON.parse(atob(token.split('.')[1]));
+                if (decodedToken.auth.includes('ROLE_ADMIN')) {
+                    navigate('/admin', { replace: true });
+                } else {
+                    navigate(from, { replace: true });
+                }
+            } catch (e) {
+                setError("Token không hợp lệ.");
+                console.error("Lỗi giải mã token:", e);
+            }
+        }, 100);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,17 +47,7 @@ const LoginPage: React.FC = () => {
             });
 
             const { id_token } = response.data;
-            auth.login(id_token);
-
-            
-            setTimeout(() => {
-                const decodedToken: { auth: string } = JSON.parse(atob(id_token.split('.')[1]));
-                if (decodedToken.auth.includes('ROLE_ADMIN')) {
-                    navigate('/admin', { replace: true });
-                } else {
-                    navigate(from, { replace: true });
-                }
-            }, 100);
+            handleLoginSuccess(id_token);
 
         } catch (err: any) {
             if (err.response && err.response.status === 401) {
@@ -50,11 +60,18 @@ const LoginPage: React.FC = () => {
             setIsLoading(false);
         }
     };
+    
+    const handleMockAdminLogin = () => {
+        handleLoginSuccess(mockAdminToken);
+    }
+    const handleMockUserLogin = () => {
+        handleLoginSuccess(mockUserToken);
+    }
+    // ------------------------------------
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-800 flex justify-center items-center p-4">
             <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow-lg sm:rounded-2xl flex justify-center flex-1">
-                {    }
                 <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
                     <div className="flex flex-col items-center">
                         <h1 className="text-2xl xl:text-4xl font-extrabold text-center text-indigo-600 tracking-wide">
@@ -113,10 +130,25 @@ const LoginPage: React.FC = () => {
                                     </Link>
                                 </p>
                             </form>
+                            
+                            {IS_MOCK_MODE && (
+                                <div className="my-8 border-t text-center">
+                                    <div className="leading-none px-2 inline-block text-sm text-gray-600 tracking-wide font-medium bg-white transform translate-y-[-12px]">
+                                        Hoặc dùng để thử nghiệm
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2 mt-4">
+                                        <button onClick={handleMockAdminLogin} className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline">
+                                            Đăng nhập với Admin
+                                        </button>
+                                         <button onClick={handleMockUserLogin} className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline">
+                                            Đăng nhập với User
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-                 {  }
                 <div className="flex-1 bg-indigo-100 text-center hidden lg:flex rounded-r-2xl">
                     <div
                         className="m-12 xl:m-16 w-full bg-contain bg-center bg-no-repeat"
@@ -129,3 +161,4 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
+

@@ -1,14 +1,12 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
-// Định nghĩa kiểu dữ liệu cho thông tin người dùng được giải mã từ token
-interface User {
-  sub: string; // Tên đăng nhập
-  auth: string; // Chuỗi chứa các quyền, ví dụ: "ROLE_ADMIN,ROLE_USER"
-  exp: number; // Thời gian hết hạn của token
-}
 
-// Định nghĩa kiểu dữ liệu cho AuthContext
+interface User {
+  sub: string; 
+  auth: string; 
+  exp: number;
+}
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
@@ -16,18 +14,16 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: () => boolean;
   isAdmin: () => boolean;
-  isLoading: boolean; // Thêm trạng thái loading để tránh render sai lúc đầu
+  isLoading: boolean; 
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider component để bao bọc ứng dụng và cung cấp context
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null); // Khởi tạo là null
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // useEffect chỉ chạy một lần lúc component mount để kiểm tra token từ localStorage
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
@@ -39,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(decodedUser);
           setAccessToken(token);
         } else {
-          localStorage.removeItem('accessToken'); // Xóa token hết hạn
+          localStorage.removeItem('accessToken');
         }
       } catch (error) {
         console.error("Token không hợp lệ, đang xóa:", error);
