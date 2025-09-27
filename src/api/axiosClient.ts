@@ -51,6 +51,20 @@ if (USE_MOCK_API) {
         return Promise.resolve(mockApi.handlePost(url, data));
     };
     
+    axiosClient.put = async (url, data) => {
+        console.log(`[Mock API] PUT: ${url}`, { data });
+        return Promise.resolve(mockApi.handlePut(url, data));
+    };
+
+    axiosClient.delete = async (url) => {
+        console.log(`[Mock API] DELETE: ${url}`);
+        return Promise.resolve(mockApi.handleDelete(url));
+    };
+
+    axiosClient.patch = async (url, data) => {
+        console.log(`[Mock API] PATCH: ${url}`, { data });
+        return Promise.resolve(mockApi.handlePatch(url, data));
+    };
 }
 
 export default axiosClient;

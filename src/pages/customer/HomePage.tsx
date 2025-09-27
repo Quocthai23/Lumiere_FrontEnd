@@ -4,6 +4,8 @@ import type { Product } from '../../types/product';
 import ProductCard from '../../components/customer/ProductCard';
 import axiosClient from '../../api/axiosClient';
 import { ArrowRight, ShoppingBag, Zap } from 'lucide-react'; 
+import RecentlyViewedProducts from '../../components/customer/RecentlyViewedProducts';
+import FlashSaleCountdown from '../../components/customer/FlashSaleCountdown';
 
 const HomePage: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -59,10 +61,12 @@ const HomePage: React.FC = () => {
             to="/products"
             className="bg-white text-gray-900 font-bold py-3 px-10 rounded-full hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 inline-flex items-center gap-2"
           >
-            Mua sắm ngay <ArrowRight size={20} />
+            <>Mua sắm ngay <ArrowRight size={20} /></>
           </Link>
         </div>
       </section>
+
+      <FlashSaleCountdown />
 
       <section>
         <div className="text-center mb-12">
@@ -122,10 +126,12 @@ const HomePage: React.FC = () => {
         )}
         <div className="text-center mt-12">
             <Link to="/products" className="text-indigo-600 font-semibold hover:underline inline-flex items-center gap-2">
-                Xem tất cả sản phẩm <ArrowRight size={16} />
+                <>Xem tất cả sản phẩm <ArrowRight size={16} /></>
             </Link>
         </div>
       </section>
+      
+      <RecentlyViewedProducts />
 
       <section className="bg-indigo-50 rounded-lg p-12">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center">

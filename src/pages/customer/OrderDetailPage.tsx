@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Order, OrderItem } from '../../types/order';
 import axiosClient from '../../api/axiosClient';
+import OrderStatusTracker from '../../components/customer/OrderStatusTracker'; // Import component mới
 
 const OrderDetailPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
@@ -40,30 +41,41 @@ const OrderDetailPage: React.FC = () => {
 
     return (
         <div>
-            <Link to="/account/orders" className="text-indigo-600 hover:underline mb-6 block">&larr; Quay lại danh sách</Link>
-            <h2 className="text-2xl font-bold mb-4">Chi tiết đơn hàng #{order.code}</h2>
-            
-            <div className="bg-gray-50 p-4 rounded-md mb-6 border">
-                <p><strong>Ngày đặt:</strong> {new Date(order.placedAt).toLocaleString('vi-VN')}</p>
-                <p><strong>Trạng thái đơn hàng:</strong> {order.status}</p>
-                <p><strong>Trạng thái thanh toán:</strong> {order.paymentStatus}</p>
-                <p><strong>Tổng tiền:</strong> <span className="font-bold text-indigo-600">{order.totalAmount.toLocaleString('vi-VN')} VND</span></p>
-                <p className="mt-2"><strong>Ghi chú giao hàng:</strong> {order.note}</p>
-            </div>
-
-            <h3 className="text-xl font-semibold mb-4">Các sản phẩm đã mua</h3>
-            <div className="space-y-4">
-                {order.orderItems?.map((item: OrderItem) => (
-                    <div key={item.id} className="flex items-center bg-white p-3 rounded-md border">
-                        <img src={`https://placehold.co/80x80/EFEFEF/333333?text=Item`} alt="product" className="w-20 h-20 object-cover rounded-md" />
-                        <div className="flex-grow ml-4">
-                            <p className="font-bold">{item.productVariant?.name}</p>
-                            <p className="text-sm text-gray-500">SKU: {item.productVariant?.sku}</p>
-                            <p className="text-sm">Số lượng: {item.quantity}</p>
+            <Link to="/account/orders" className="text-indigo-600 hover:underline mb-6 inline-block">&larr; Quay lại danh sách</Link>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold mb-4">Chi tiết đơn hàng #{order.code}</h2>
+                        <div className="bg-white p-4 rounded-lg shadow-sm border space-y-2">
+                            <p><strong>Ngày đặt:</strong> {new Date(order.placedAt).toLocaleString('vi-VN')}</p>
+                            <p><strong>Tổng tiền:</strong> <span className="font-bold text-indigo-600">{order.totalAmount.toLocaleString('vi-VN')} VND</span></p>
+                            <p className="pt-2"><strong>Ghi chú giao hàng:</strong> {order.note || 'Không có'}</p>
                         </div>
-                        <p className="font-semibold">{(item.unitPrice * item.quantity).toLocaleString('vi-VN')} VND</p>
                     </div>
-                ))}
+
+                    <div>
+                        <h3 className="text-xl font-semibold mb-4">Các sản phẩm đã mua</h3>
+                        <div className="space-y-4">
+                            {order.orderItems?.map((item: OrderItem) => (
+                                <div key={item.id} className="flex items-center bg-white p-3 rounded-lg shadow-sm border">
+                                    <img src={`https://placehold.co/80x80/EFEFEF/333333?text=Item`} alt={item.productVariant?.name} className="w-20 h-20 object-cover rounded-md" />
+                                    <div className="flex-grow ml-4">
+                                        <p className="font-bold text-gray-800">{item.productVariant?.name}</p>
+                                        <p className="text-sm text-gray-500">SKU: {item.productVariant?.sku}</p>
+                                        <p className="text-sm">Số lượng: {item.quantity}</p>
+                                    </div>
+                                    <p className="font-semibold text-gray-900">{(item.unitPrice * item.quantity).toLocaleString('vi-VN')} VND</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-1">
+                    {order.orderStatusHistory && (
+                        <OrderStatusTracker history={order.orderStatusHistory} currentStatus={order.status} />
+                    )}
+                </div>
             </div>
         </div>
     );

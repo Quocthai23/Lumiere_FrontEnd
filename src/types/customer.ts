@@ -5,4 +5,6 @@ export interface Customer {
     email: string;
     phone?: string;
     address?: string;
+    tier?: 'GOLD' | 'SILVER' | 'BRONZE';
+    loyaltyPoints?: number;
 }

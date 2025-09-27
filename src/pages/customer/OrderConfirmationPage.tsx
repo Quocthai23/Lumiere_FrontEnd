@@ -18,7 +18,8 @@ const OrderConfirmationPage: React.FC = () => {
         <h2 className="text-xl font-semibold mb-4">Thông tin đơn hàng</h2>
         <p><strong>Mã đơn hàng:</strong> #{order.code}</p>
         <p><strong>Tổng tiền:</strong> {order.totalAmount.toLocaleString('vi-VN')} VND</p>
-        <p><strong>Trạng thái:</strong> Đang xử lý</p>
+        <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod}</p>
+        <p><strong>Trạng thái thanh toán:</strong> {order.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}</p>
         <p className="mt-4">Chúng tôi sẽ liên hệ với bạn để xác nhận đơn hàng trong thời gian sớm nhất.</p>
       </div>
       <div className="space-x-4">

@@ -37,14 +37,17 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ title, children, isOpen, 
 interface Filters {
   'price.greaterThanOrEqual'?: string;
   'price.lessThanOrEqual'?: string;
-  'category.in'?: string; // Lọc theo nhiều danh mục
-  'variants.color.equals'?: string; // Lọc theo màu sắc
+  'category.in'?: string;
+  'variants.color.equals'?: string;
+  'variants.size.in'?: string; // New size filter
+  'material.in'?: string;      // New material filter
 }
 
 interface ProductFilterSidebarProps {
     onApplyFilters: (filters: Filters) => void;
 }
 
+// Danh sách các tùy chọn lọc
 const categories = ['Áo Thun', 'Áo Sơ Mi', 'Quần Jeans', 'Váy', 'Áo Khoác', 'Đồ Ngủ'];
 const colors = ['#000000', '#FFFFFF', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6'];
 const colorNames: { [key: string]: string } = {
@@ -55,6 +58,8 @@ const colorNames: { [key: string]: string } = {
     '#f59e0b': 'Vàng',
     '#8b5cf6': 'Tím'
 };
+const sizes = ['S', 'M', 'L', 'XL'];
+const materials = ['Cotton', 'Denim', 'Polyester', 'Kaki', 'Voan'];
 
 
 const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilters }) => {
@@ -62,22 +67,29 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
     const [maxPrice, setMaxPrice] = useState('2000000');
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedColor, setSelectedColor] = useState<string>('');
+    const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+    const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
     
     const [openSections, setOpenSections] = useState({
         price: true,
         category: true,
         color: true,
+        size: true,
+        material: true,
     });
 
     const toggleSection = (section: keyof typeof openSections) => {
         setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    const handleCategoryChange = (category: string) => {
-        setSelectedCategories(prev =>
-            prev.includes(category)
-                ? prev.filter(c => c !== category)
-                : [...prev, category]
+    const handleCheckboxChange = (
+        setter: React.Dispatch<React.SetStateAction<string[]>>, 
+        value: string
+    ) => {
+        setter(prev =>
+            prev.includes(value)
+                ? prev.filter(item => item !== value)
+                : [...prev, value]
         );
     };
     
@@ -86,12 +98,17 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
         if (minPrice !== '0') newFilters['price.greaterThanOrEqual'] = minPrice;
         if (maxPrice !== '2000000') newFilters['price.lessThanOrEqual'] = maxPrice;
         
-        // Cập nhật logic để thêm bộ lọc danh mục và màu sắc
         if (selectedCategories.length > 0) {
             newFilters['category.in'] = selectedCategories.join(',');
         }
         if (selectedColor) {
             newFilters['variants.color.equals'] = colorNames[selectedColor];
+        }
+        if (selectedSizes.length > 0) {
+            newFilters['variants.size.in'] = selectedSizes.join(',');
+        }
+        if (selectedMaterials.length > 0) {
+            newFilters['material.in'] = selectedMaterials.join(',');
         }
 
         onApplyFilters(newFilters);
@@ -102,6 +119,8 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
         setMaxPrice('2000000');
         setSelectedCategories([]);
         setSelectedColor('');
+        setSelectedSizes([]);
+        setSelectedMaterials([]);
         onApplyFilters({});
     };
 
@@ -141,7 +160,7 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
               <input 
                 type="checkbox" 
                 checked={selectedCategories.includes(category)}
-                onChange={() => handleCategoryChange(category)}
+                onChange={() => handleCheckboxChange(setSelectedCategories, category)}
                 className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
               />
               <span className="ml-3 text-gray-700">{category}</span>
@@ -150,6 +169,42 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
         </div>
       </AccordionItem>
 
+      <AccordionItem title="Kích cỡ" isOpen={openSections.size} onToggle={() => toggleSection('size')}>
+        <div className="flex flex-wrap gap-3">
+          {sizes.map(size => (
+            <label key={size} className="cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={selectedSizes.includes(size)}
+                onChange={() => handleCheckboxChange(setSelectedSizes, size)}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-10 rounded-lg border flex items-center justify-center font-semibold text-gray-600
+                            peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600
+                            hover:border-indigo-400 transition-colors">
+                {size}
+              </div>
+            </label>
+          ))}
+        </div>
+      </AccordionItem>
+      
+      <AccordionItem title="Chất liệu" isOpen={openSections.material} onToggle={() => toggleSection('material')}>
+        <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+          {materials.map(material => (
+            <label key={material} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <input 
+                type="checkbox" 
+                checked={selectedMaterials.includes(material)}
+                onChange={() => handleCheckboxChange(setSelectedMaterials, material)}
+                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
+              />
+              <span className="ml-3 text-gray-700">{material}</span>
+            </label>
+          ))}
+        </div>
+      </AccordionItem>
+      
       <AccordionItem title="Màu sắc" isOpen={openSections.color} onToggle={() => toggleSection('color')}>
         <div className="flex flex-wrap gap-4">
            {colors.map(color => (
@@ -186,4 +241,3 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
 };
 
 export default ProductFilterSidebar;
-

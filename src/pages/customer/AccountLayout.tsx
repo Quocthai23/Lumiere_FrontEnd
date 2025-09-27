@@ -22,11 +22,46 @@ const AccountLayout: React.FC = () => {
                             Thông tin cá nhân
                         </NavLink>
                         <NavLink
+                            to="/account/addresses"
+                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                            Sổ địa chỉ
+                        </NavLink>
+                        <NavLink
                             to="/account/orders"
                             style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
                             className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
                         >
                             Lịch sử đơn hàng
+                        </NavLink>
+                        <NavLink
+                            to="/account/wishlist"
+                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                            Danh sách yêu thích
+                        </NavLink>
+                         <NavLink
+                            to="/account/loyalty"
+                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                            Chương trình thành viên
+                        </NavLink>
+                         <NavLink
+                            to="/account/points"
+                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                            Lịch sử điểm thưởng
+                        </NavLink>
+                         <NavLink
+                            to="/account/notifications"
+                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
+                        >
+                            Thông báo
                         </NavLink>
                     </nav>
                 </aside>
@@ -42,3 +77,4 @@ const AccountLayout: React.FC = () => {
 };
 
 export default AccountLayout;
+

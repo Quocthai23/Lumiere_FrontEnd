@@ -16,11 +16,14 @@ interface CartContextType {
   updateQuantity: (variantId: number, newQuantity: number) => void;
   clearCart: () => void;
   applyVoucher: (code: string) => Promise<{ success: boolean; message: string }>;
+  applyPoints: (points: number) => { success: boolean; message: string };
   cartCount: number;
   subtotal: number;
   discount: number;
+  pointsDiscount: number;
   totalPrice: number;
   appliedVoucher: Voucher | null;
+  redeemedPoints: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -37,6 +40,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
 
   useEffect(() => {
     localStorage.setItem('lumiereCart', JSON.stringify(cartItems));
@@ -77,6 +81,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearCart = () => {
       setCartItems([]);
       setAppliedVoucher(null); 
+      setRedeemedPoints(0);
   };
 
   const applyVoucher = async (code: string): Promise<{ success: boolean; message: string }> => {
@@ -92,17 +97,27 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error("Lỗi khi áp dụng voucher:", error);
       setAppliedVoucher(null);
-      return { success: false, message: 'Đã xảy ra lỗi. Vui lòng thử lại.' };
+      return { success: false, message: 'Đã có lỗi xảy ra. Vui lòng thử lại.' };
     }
   };
+
+  const applyPoints = (points: number): { success: boolean; message: string } => {
+    // Tạm thời chưa có logic kiểm tra điểm tối đa, sẽ thêm sau
+    setRedeemedPoints(points);
+    return { success: true, message: `Đã áp dụng ${points.toLocaleString('vi-VN')} điểm.`};
+  };
+
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cartItems.reduce((total, item) => total + (item.variant.price * item.quantity), 0);
   const discount = appliedVoucher ? (subtotal * appliedVoucher.discountPercentage) / 100 : 0;
-  const totalPrice = subtotal - discount;
+  
+  // Logic quy đổi điểm: 1 điểm = 1,000 VND
+  const pointsDiscount = redeemedPoints * 1000;
+  const totalPrice = Math.max(0, subtotal - discount - pointsDiscount);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, applyVoucher, cartCount, subtotal, discount, totalPrice, appliedVoucher }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, applyVoucher, applyPoints, cartCount, subtotal, discount, pointsDiscount, totalPrice, appliedVoucher, redeemedPoints }}>
       {children}
     </CartContext.Provider>
   );

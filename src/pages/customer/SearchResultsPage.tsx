@@ -23,9 +23,9 @@ const SearchResultsPage: React.FC = () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Thay đổi cách gọi API để phù hợp với mockApi
+                // Thay đổi tham số từ 'name.contains' thành 'query' để kích hoạt logic tìm kiếm mới
                 const response = await axiosClient.get(`/products`, {
-                    params: { 'name.contains': query }
+                    params: { 'query': query }
                 });
                 setProducts(response.data);
             } catch (err) {

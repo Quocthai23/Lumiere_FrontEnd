@@ -7,7 +7,7 @@ import ProductPage from '../pages/customer/ProductPage';
 import ProductDetailPage from '../pages/customer/ProductDetailPage';
 import CartPage from '../pages/customer/CartPage';
 import CheckoutPage from '../pages/customer/CheckoutPage';
-import OrderConfirmationPage from '../pages/customer/OrderConfirmationPage'; // <-- Thêm import
+import OrderConfirmationPage from '../pages/customer/OrderConfirmationPage';
 import AccountLayout from '../pages/customer/AccountLayout';
 import OrderHistoryPage from '../pages/customer/OrderHistoryPage';
 import OrderDetailPage from '../pages/customer/OrderDetailPage';
@@ -22,6 +22,9 @@ import AdminCustomerDetailPage from '../pages/admin/AdminCustomerDetailPage';
 import WarehouseManagementPage from '../pages/admin/WarehouseManagementPage';
 import InventoryManagementPage from '../pages/admin/InventoryManagementPage';
 import VoucherManagementPage from '../pages/admin/VoucherManagementPage';
+import WishlistPage from '../pages/customer/WishlistPage';
+import CollectionsPage from '../pages/customer/CollectionsPage';
+import CollectionDetailPage from '../pages/customer/CollectionDetailPage';
 
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
@@ -30,6 +33,11 @@ import ProductManagementPage from '../pages/admin/ProductManagementPage';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../hooks/useAuth';
 import AdminProductDetailPage from '../pages/admin/AdminProductDetailPage';
+import AddressPage from '../pages/customer/AddressPage';
+import ComparisonPage from '../pages/customer/ComparisonPage';
+import LoyaltyPage from '../pages/customer/LoyaltyPage';
+import NotificationsPage from '../pages/customer/NotificationsPage';
+import PointHistoryPage from '../pages/customer/PointHistoryPage';
 
 const AppRoutes: React.FC = () => {
     const { isLoading } = useAuth();
@@ -39,27 +47,36 @@ const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Customer Layout */}
+        {/* Customer Layout - Public Routes */}
         <Route path="/" element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductPage />} />
           <Route path="products/:slug" element={<ProductDetailPage />} />
+          <Route path="collections" element={<CollectionsPage />} />
+          <Route path="collections/:slug" element={<CollectionDetailPage />} />
           <Route path="cart" element={<CartPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="order-confirmation" element={<OrderConfirmationPage />} /> {/* <-- Route mới */}
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="search" element={<SearchResultsPage />} />
+          <Route path="compare" element={<ComparisonPage />} />
+          {/* Public Checkout and Confirmation */}
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="order-confirmation" element={<OrderConfirmationPage />} />
         </Route>
 
-        {/* Account Routes (Protected) */}
+        {/* Protected Customer Account Routes */}
         <Route element={<ProtectedRoute requireAdmin={false} />}>
             <Route path="/account" element={<CustomerLayout />}>
                 <Route element={<AccountLayout />}>
                     <Route index element={<Navigate to="profile" replace />} />
                     <Route path="profile" element={<ProfilePage />} />
+                    <Route path="addresses" element={<AddressPage />} />
                     <Route path="orders" element={<OrderHistoryPage />} />
+                    <Route path="wishlist" element={<WishlistPage />} />
                     <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                    <Route path="loyalty" element={<LoyaltyPage />} />
+                    <Route path="points" element={<PointHistoryPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                 </Route>
             </Route>
         </Route>
