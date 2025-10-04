@@ -7,7 +7,6 @@ import { mockAdminToken, mockUserToken } from '../../mocks/auth';
 const IS_MOCK_MODE = true;
 
 const LoginPage: React.FC = () => {
-    // ... (state and handlers remain the same)
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');

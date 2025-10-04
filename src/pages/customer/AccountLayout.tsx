@@ -50,13 +50,6 @@ const AccountLayout: React.FC = () => {
                             Chương trình thành viên
                         </NavLink>
                          <NavLink
-                            to="/account/points"
-                            style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
-                            className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"
-                        >
-                            Lịch sử điểm thưởng
-                        </NavLink>
-                         <NavLink
                             to="/account/notifications"
                             style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
                             className="px-4 py-2 rounded-md font-semibold text-gray-700 hover:bg-gray-100"

@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import type { Product } from '../../types/product';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useQuickView } from '../../contexts/QuickViewContext';
-import { useComparison } from '../../contexts/ComparisonContext'; // Import
+import { useComparison } from '../../contexts/ComparisonContext'; 
 import StarRating from '../../pages/customer/StarRating';
-import { Eye, Plus, Check } from 'lucide-react'; // Import icons
+import { Eye, Plus, Check } from 'lucide-react'; 
 
 interface ProductCardProps {
   product: Product;

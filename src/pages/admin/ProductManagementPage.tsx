@@ -2,15 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 import type { Product } from '../../types/product';
-import ProductFormModal from '../../components/admin/ProductFormModal';
 
 const ProductManagementPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -30,42 +26,14 @@ const ProductManagementPage: React.FC = () => {
     fetchProducts();
   }, []);
   
-  const handleOpenModalForCreate = () => {
-    setEditingProduct(null);
-    setIsModalOpen(true);
-  };
-  
-  const handleOpenModalForEdit = (product: Product) => {
-    setEditingProduct(product);
-    setIsModalOpen(true);
-  };
-  
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingProduct(null);
-  };
-
-  const handleSaveProduct = async (productToSave: Product) => {
-    try {
-        if (editingProduct && editingProduct.id) {
-            await axiosClient.put(`/products/${editingProduct.id}`, productToSave);
-        } else {
-            await axiosClient.post('/products', productToSave);
-        }
-        handleCloseModal();
-        fetchProducts();
-    } catch (error) {
-        console.error("Lỗi khi lưu sản phẩm:", error);
-    }
-  };
-  
   const handleDeleteProduct = async (productId: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không? Thao tác này không thể hoàn tác.')) {
         try {
             await axiosClient.delete(`/products/${productId}`);
             fetchProducts();
         } catch (error) {
             console.error("Lỗi khi xóa sản phẩm:", error);
+            alert("Xóa sản phẩm thất bại. Vui lòng thử lại.");
         }
     }
   };
@@ -77,9 +45,9 @@ const ProductManagementPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quản lý Sản phẩm</h1>
-        <button onClick={handleOpenModalForCreate} className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+        <Link to="/admin/products/new" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
           + Thêm sản phẩm
-        </button>
+        </Link>
       </div>
       
       <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -107,10 +75,9 @@ const ProductManagementPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <Link to={`/admin/products/${product.id}`} className="font-medium text-green-600 hover:underline mr-4">
-                    Quản lý
+                  <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-indigo-600 hover:underline mr-4">
+                    Chỉnh sửa
                   </Link>
-                  <button onClick={() => handleOpenModalForEdit(product)} className="font-medium text-indigo-600 hover:underline mr-4">Sửa thông tin</button>
                   <button onClick={() => handleDeleteProduct(product.id)} className="font-medium text-red-600 hover:underline">Xóa</button>
                 </td>
               </tr>
@@ -118,12 +85,6 @@ const ProductManagementPage: React.FC = () => {
           </tbody>
         </table>
       </div>
-      <ProductFormModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSave={handleSaveProduct}
-        product={editingProduct}
-      />
     </div>
   );
 };

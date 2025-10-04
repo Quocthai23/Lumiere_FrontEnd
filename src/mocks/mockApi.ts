@@ -1,7 +1,7 @@
 import mockData from '../mockData.json';
 import type { Product, ProductVariant } from '../types/product';
 import type { Address } from '../types/address';
-import type { QASet } from '../types/qa';
+import type { Question } from '../types/qa';
 import type { LoyaltyTransaction } from '../types/loyalty';
 import type { Notification } from '../types/notification';
 import type { Review } from '../types/product';
@@ -9,7 +9,7 @@ import type { Order } from '../types/order';
 import type { Collection } from '../types/collection';
 import type { FlashSale } from '../types/flashSale';
 import type { ChatSession, ChatMessage } from '../types/chat';
-import { searchProducts } from '../utils/searchUtils'; // Import a new search utility
+import { searchProducts } from '../utils/searchUtils';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,6 +32,17 @@ const getAllVariants = (): ProductVariant[] => {
 // --- GET ---
 export const handleGet = async (url: string, params: URLSearchParams) => {
     await sleep(300);
+
+    if (url.startsWith('/admin/notifications')) {
+        const adminNotifications = [
+            { id: 101, type: 'NEW_ORDER', message: 'Đơn hàng mới #ORD-MOCK-12345 đã được đặt.', link: '/admin/orders/1', isRead: false, createdAt: new Date().toISOString() },
+            { id: 102, type: 'LOW_STOCK', message: 'Sản phẩm "Áo Thun Cotton Cơ Bản - Trắng, M" sắp hết hàng.', link: '/admin/inventory', isRead: false, createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+            { id: 103, type: 'NEW_CUSTOMER', message: 'Khách hàng mới "John Doe" vừa đăng ký.', link: '/admin/customers/3', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+            { id: 104, type: 'NEW_QA', message: 'Có câu hỏi mới cho sản phẩm "Quần Jeans Slim-fit".', link: '/admin/qa', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+            { id: 105, type: 'NEW_ORDER', message: 'Đơn hàng mới #ORD-MOCK-12344 đã được đặt.', link: '/admin/orders/2', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() }
+        ];
+        return createResponse(adminNotifications);
+    }
 
     // Chat Session
     if (url.match(/\/chat\/session\/(\d+)/)) {
@@ -282,16 +293,16 @@ export const handlePost = async (url: string, data: any) => {
         const newOrder: Order = {
             ...data,
             id: Math.max(...mockData.orders.map(o => o.id), 0) + 1,
-            customerId: customerId,
             code: `ORD-MOCK-${Date.now()}`,
             placedAt: new Date().toISOString(),
             orderStatusHistory: [{id: Date.now(), orderId: 0, status: "PENDING", description: "Đơn hàng đã được đặt", timestamp: new Date().toISOString()}]
         };
+        (newOrder as any).customerId = customerId;
         mockData.orders.push(newOrder);
 
         // --- Loyalty Point Logic ---
         const pointsEarned = Math.floor(newOrder.totalAmount / 10000); // 1 point per 10,000 VND
-        if (pointsEarned > 0) {
+        if (pointsEarned > 0 && customer.loyaltyPoints) {
             customer.loyaltyPoints += pointsEarned;
             const loyaltyEntry: LoyaltyTransaction = {
                 id: Math.max(...mockData.loyaltyHistory.map(h => h.id), 0) + 1,
@@ -325,7 +336,7 @@ export const handlePost = async (url: string, data: any) => {
     
     // Create QA
     if (url.startsWith('/qas')) {
-        const newQA: QASet = {
+        const newQA: Question = {
             ...data,
             id: Math.max(...mockData.qas.map(q => q.id), 0) + 1,
             createdAt: new Date().toISOString(),
@@ -354,7 +365,7 @@ export const handlePost = async (url: string, data: any) => {
             notified: false,
             createdAt: new Date().toISOString(),
         };
-        mockData.stockNotifications.push(newNotification);
+        (mockData.stockNotifications as any).push(newNotification);
         console.log('[Mock API] Stock Notification subscription:', newNotification);
         return createResponse(newNotification, 201);
     }
@@ -416,7 +427,7 @@ export const handleDelete = async (url: string) => {
 };
 
 // --- PATCH ---
-export const handlePatch = async (url: string) => {
+export const handlePatch = async (url: string, data: any) => {
     await sleep(300);
 
     // Set Default Address
@@ -457,8 +468,8 @@ export const handlePatch = async (url: string) => {
         return createResponse({ message: 'All marked as read' });
     }
 
-
     // Fallback for unhandled PATCH requests
     console.warn(`[Mock API] PATCH request not handled: ${url}`);
     return createResponse({ message: 'Not Found' }, 404);
 };
+

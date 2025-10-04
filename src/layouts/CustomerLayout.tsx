@@ -106,7 +106,6 @@ const CustomerLayout: React.FC = () => {
                     <Link to="/" className="text-3xl font-bold text-indigo-600 tracking-wider">LUMIERE</Link>
 
                     <div className="hidden md:flex items-center space-x-8">
-                        <NavLink to="/" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Trang chủ</NavLink>
                         <NavLink to="/products" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Sản phẩm</NavLink>
                         <NavLink to="/collections" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Bộ sưu tập</NavLink>
                         <NavLink to="/about" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Về chúng tôi</NavLink>
