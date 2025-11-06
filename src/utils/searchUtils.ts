@@ -1,4 +1,4 @@
-import type { Product } from '../../types/product';
+import type {Product} from "../types/product.ts";
 
 /**
  * @param {string} s1 Chuỗi thứ nhất.
@@ -70,7 +70,7 @@ export const searchProducts = (products: Product[], query: string): Product[] =>
 
     queryWords.forEach(queryWord => {
       const threshold = queryWord.length > 4 ? 2 : 1; // Ngưỡng lỗi cho phép
-      
+
       if (nameWords.some(nameWord => levenshtein(queryWord, nameWord) <= threshold)) {
         score += 3;
       }
@@ -78,7 +78,7 @@ export const searchProducts = (products: Product[], query: string): Product[] =>
         score += 1;
       }
     });
-    
+
     if (score > 0) {
       results.push({ product, score });
     }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
+import {httpClient} from "../../utils/HttpClient.ts";
 
 const RegisterPage: React.FC = () => {
     const [login, setLogin] = useState('');
@@ -25,7 +25,7 @@ const RegisterPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            await axiosClient.post('/api/register', {
+            await httpClient.post('/register', {
                 login,
                 email,
                 password,

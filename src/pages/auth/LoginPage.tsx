@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import axiosClient from '../../api/axiosClient';
 import { mockAdminToken, mockUserToken } from '../../mocks/auth';
+import httpClient from "../../utils/HttpClient.ts";
 
 const IS_MOCK_MODE = true;
 
@@ -40,13 +40,16 @@ const LoginPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const response = await axiosClient.post('/api/authenticate', {
+
+            type AuthResponse = { id_token: string };
+
+            const res = await httpClient.post<AuthResponse>('/authenticate', {
                 username,
                 password,
                 rememberMe: true,
             });
 
-            const { id_token } = response.data;
+            const { id_token } = res;
             handleLoginSuccess(id_token);
 
         } catch (err: any) {
