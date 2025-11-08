@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axiosClient from '../../api/axiosClient';
 import WarehouseFormModal from '../../components/admin/WarehouseFormModal';
 import { PlusCircle, Search } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // Định nghĩa kiểu dữ liệu cho Warehouse
 interface Warehouse {
@@ -36,9 +37,9 @@ const WarehouseManagementPage: React.FC = () => {
     const fetchWarehouses = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/warehouses?sort=id,asc');
+            const response = await httpClient.get<Warehouse[]>('/warehouses?sort=id,asc');
             // Sửa lỗi: Đảm bảo setWarehouses luôn nhận được một mảng
-            setWarehouses(response.data || []); 
+            setWarehouses(response || []);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách kho hàng.');

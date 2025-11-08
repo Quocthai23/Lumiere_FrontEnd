@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
-import type { Customer } from '../../types/customer';
-import type { Order } from '../../types/order';
-import { DollarSign, ShoppingCart, Star, User, Mail, Phone, MapPin, Edit } from 'lucide-react';
+import React, {useEffect, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
+import type {Customer} from '../../types/customer';
+import type {Order} from '../../types/order';
+import {DollarSign, Edit, Mail, MapPin, Phone, ShoppingCart, Star, User} from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // --- Reusable UI Components ---
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -45,11 +45,10 @@ const AdminCustomerDetailPage: React.FC = () => {
             if (!customerId) return;
             setIsLoading(true);
             try {
-                const customerResponse = await axiosClient.get(`/customers/${customerId}`);
-                setCustomer(customerResponse.data);
+                const customerResponse = await httpClient.get<Customer>(`/customers/${customerId}`);
+                setCustomer(customerResponse);
 
-                const ordersResponse = await axiosClient.get(`/orders?customerId.equals=${customerId}&sort=placedAt,desc`);
-                const customerOrders = ordersResponse.data;
+                const customerOrders = await httpClient.get<Order[]>(`/orders?customerId.equals=${customerId}&sort=placedAt,desc`);
                 setOrders(customerOrders);
                 
                 // Calculate total spent from completed orders

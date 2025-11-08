@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { mockAdminToken, mockUserToken } from '../../mocks/auth';
 import httpClient from "../../utils/HttpClient.ts";
+import {login, type StoredUser} from "../../utils/AuthUtils.ts";
 
 const IS_MOCK_MODE = true;
 
@@ -19,9 +20,14 @@ const LoginPage: React.FC = () => {
 
     const handleLoginSuccess = (token: string) => {
         auth.login(token);
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
                 const decodedToken: { auth: string } = JSON.parse(atob(token.split('.')[1]));
+                const userInfo = await httpClient.get<StoredUser>(
+                    `/users/${username}`
+                )
+                login(userInfo);
+
                 if (decodedToken.auth.includes('ROLE_ADMIN')) {
                     navigate('/admin', { replace: true });
                 } else {

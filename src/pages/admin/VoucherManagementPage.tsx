@@ -3,6 +3,7 @@ import axiosClient from '../../api/axiosClient';
 import VoucherFormModal from '../../components/admin/VoucherFormModal';
 import type { Voucher } from '../../types/voucher';
 import { PlusCircle, Search } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // --- Reusable UI Components ---
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -38,9 +39,9 @@ const VoucherManagementPage: React.FC = () => {
     const fetchVouchers = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/vouchers?sort=id,asc');
+            const response = await httpClient.get<Voucher[]>('/vouchers?sort=id,asc');
             // Sửa lỗi: Đảm bảo setVouchers luôn nhận được một mảng
-            setVouchers(response.data || []);
+            setVouchers(response || []);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách mã giảm giá.');
@@ -81,9 +82,9 @@ const VoucherManagementPage: React.FC = () => {
     const handleSaveVoucher = async (voucherData: Omit<Voucher, 'id' | 'usageCount'> & { id?: number }) => {
         try {
             if (editingVoucher) {
-                await axiosClient.put(`/vouchers/${editingVoucher.id}`, voucherData);
+                await httpClient.put(`/vouchers/${editingVoucher.id}`, voucherData);
             } else {
-                await axiosClient.post('/vouchers', voucherData);
+                await  httpClient.post('/vouchers', voucherData);
             }
             handleCloseModal();
             fetchVouchers();

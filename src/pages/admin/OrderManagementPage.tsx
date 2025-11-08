@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
 import type { Order } from '../../types/order';
 import { File, ListFilter, Search } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // Reusable UI Components
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -10,9 +10,6 @@ const Card = ({ children, className = '' }: { children: React.ReactNode, classNa
 );
 const CardHeader = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
     <div className={`p-4 border-b ${className}`}>{children}</div>
-);
-const CardTitle = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-    <h3 className={`font-semibold text-lg ${className}`}>{children}</h3>
 );
 const CardContent = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
     <div className={`p-4 ${className}`}>{children}</div>
@@ -51,10 +48,8 @@ const OrderManagementPage: React.FC = () => {
     const fetchOrders = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/orders?sort=placedAt,desc');
-            // In a real app, customer data would be joined on the backend.
-            // Here, we'll map it for the mock API.
-            const ordersWithCustomer = response.data.map((order: any) => ({
+            const response = await httpClient.get<Order[]>('/orders?sort=placedAt,desc');
+            const ordersWithCustomer = response.map((order: any) => ({
                 ...order,
                 customerName: order.customer ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() : 'Guest'
             }));

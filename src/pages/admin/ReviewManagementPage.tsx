@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axiosClient from '../../api/axiosClient';
 import type { Review } from '../../types/product';
 import { Star, Check, Trash2, CornerDownRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import httpClient from "../../utils/HttpClient.ts";
 
 // Định nghĩa kiểu dữ liệu Review mở rộng
 interface ReviewWithProduct extends Review {
@@ -34,8 +34,8 @@ const ReviewManagementPage: React.FC = () => {
     const fetchReviews = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/reviews?_expand=product');
-            const reviewsWithStatus = (response.data || []).map((review: ReviewWithProduct, index: number) => ({
+            const response = await httpClient.get<ReviewWithProduct[]>('/product-reviews?_expand=product');
+            const reviewsWithStatus = (response || []).map((review: ReviewWithProduct, index: number) => ({
                 ...review,
                 status: index % 3 === 0 ? 'PENDING' : 'APPROVED',
                 replyText: index % 4 === 0 ? 'Cảm ơn bạn đã đánh giá sản phẩm này!' : undefined

@@ -1,3 +1,5 @@
+import type {AttachmentDTO} from "./types.ts";
+
 export interface Review {
   id: number;
   productId: number;
@@ -18,7 +20,8 @@ export interface ProductVariant {
   stockQuantity: number;
   isDefault: boolean;
   color?: string; 
-  size?: string; // Add size property
+  size?: string;
+  urlImage?: string
 }
 
 export interface Product {
@@ -30,10 +33,10 @@ export interface Product {
   status: string;
   createdAt: string;
   updatedAt: string;
-  category: string; 
+  categoryId: string,
   material?: string; // Add material property
   variants?: ProductVariant[];
   averageRating: number;
   reviewCount: number;
-  images?: string[]; // Thêm trường hình ảnh
+  attachmentDTOS?: AttachmentDTO[];
 }

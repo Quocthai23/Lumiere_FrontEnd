@@ -1,14 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
-import type { Order, OrderItem, OrderStatusHistory } from '../../types/order';
-import type { Customer } from '../../types/customer'; 
-import { CheckCircle, Circle, Package, Truck, Home, CreditCard, User, Mail, Phone, MapPin } from 'lucide-react';
+import React, {useEffect, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
+import type {Order, OrderItem, OrderStatusHistory} from '../../types/order';
+import type {Customer} from '../../types/customer';
+import {
+    CheckCircle,
+    Circle,
+    CreditCard,
+    Home,
+    Medal,
+    Package,
+    Phone,
+    Truck,
+    User
+} from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
+import OrderInvoiceButton from "../../components/admin/OrderInvoiceButton.tsx";
 
 
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 const PAYMENT_STATUSES = ['UNPAID', 'PAID', 'REFUNDED'];
-const FULFILLMENT_STATUSES = ['UNFULFILLED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'FAILED'];
 
 // Reusable UI Components
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -43,7 +53,7 @@ const OrderTimeline: React.FC<{ history: OrderStatusHistory[] }> = ({ history })
             <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200"></div>
 
             <ul className="space-y-6">
-            {sortedHistory.map((item, index) => {
+            {sortedHistory.map((item) => {
                 const config = statusConfig[item.status] || { icon: Circle, text: item.status };
                 const Icon = config.icon;
 
@@ -82,18 +92,23 @@ const AdminOrderDetailPage: React.FC = () => {
         if (!orderId) return;
         setIsLoading(true);
         try {
-            const orderResponse = await axiosClient.get(`/orders/${orderId}`);
-            setOrder(orderResponse.data);
+            const orderResponse = await httpClient.get<Order>(`/orders/${orderId}`);
+
+            // Gắn vào orderResponse
+            orderResponse.orderItems = await httpClient.get<OrderItem[]>(`/order-items/by-order/${orderId}`);
+
+            setOrder(orderResponse);
             setStatusData({
-                status: orderResponse.data.status,
-                paymentStatus: orderResponse.data.paymentStatus,
-                fulfillmentStatus: orderResponse.data.fulfillmentStatus,
+                status: orderResponse.status,
+                paymentStatus: orderResponse.paymentStatus,
+                fulfillmentStatus: orderResponse.fulfillmentStatus,
             });
 
-            if (orderResponse.data.customer?.id) {
-                const customerResponse = await axiosClient.get(`/customers/${orderResponse.data.customer.id}`);
-                setCustomer(customerResponse.data);
+            if (orderResponse.customer?.id) {
+                const customerResponse = await httpClient.get<Customer>(`/customers/${orderResponse.customer.id}`);
+                setCustomer(customerResponse);
             }
+
 
             setError(null);
         } catch (err) {
@@ -116,7 +131,7 @@ const AdminOrderDetailPage: React.FC = () => {
     const handleUpdateStatus = async () => {
         if (!order) return;
         try {
-            await axiosClient.patch(`/orders/${order.id}`, statusData);
+            await httpClient.post(`/orders/${order.id}`, statusData);
             alert('Cập nhật trạng thái thành công!');
             fetchOrderDetails(); // Refetch to update history
         } catch (err) {
@@ -139,7 +154,7 @@ const AdminOrderDetailPage: React.FC = () => {
                      <h1 className="text-2xl font-bold">Đơn hàng #{order.code}</h1>
                      <p className="text-sm text-gray-500">{new Date(order.placedAt).toLocaleString('vi-VN')}</p>
                 </div>
-                 <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm">In hóa đơn</button>
+                <OrderInvoiceButton orderId={order.id} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -150,6 +165,7 @@ const AdminOrderDetailPage: React.FC = () => {
                              <table className="min-w-full text-sm">
                                 <thead className="text-gray-500">
                                     <tr>
+                                        <th className="text-left font-medium p-2"></th>
                                         <th className="text-left font-medium p-2">Sản phẩm</th>
                                         <th className="text-right font-medium p-2">Số lượng</th>
                                         <th className="text-right font-medium p-2">Đơn giá</th>
@@ -159,14 +175,35 @@ const AdminOrderDetailPage: React.FC = () => {
                                 <tbody className="divide-y">
                                 {order.orderItems?.map((item: OrderItem) => (
                                     <tr key={item.id}>
+                                        {/* Ảnh */}
+                                        <td className="p-2 w-14">
+                                            {item.productVariant?.urlImage ? (
+                                                <img
+                                                    src={item.productVariant.urlImage}
+                                                    alt={item.productVariant?.name || 'Ảnh'}
+                                                    className="w-10 h-10 rounded object-cover border"
+                                                    onError={(e: any) => (e.currentTarget.style.display = 'none')}
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded bg-gray-100 border" />
+                                            )}
+                                        </td>
+
+                                        {/* Tên & SKU */}
                                         <td className="p-2">
                                             <p className="font-medium">{item.productVariant?.name}</p>
                                             <p className="text-xs text-gray-500">SKU: {item.productVariant?.sku}</p>
                                         </td>
+
                                         <td className="p-2 text-right">{item.quantity}</td>
-                                        <td className="p-2 text-right">{item.unitPrice.toLocaleString('vi-VN')} ₫</td>
-                                        <td className="p-2 text-right font-semibold">{item.totalPrice.toLocaleString('vi-VN')} ₫</td>
+                                        <td className="p-2 text-right">
+                                            {item.unitPrice?.toLocaleString('vi-VN')} ₫
+                                        </td>
+                                        <td className="p-2 text-right font-semibold">
+                                            {item.totalPrice?.toLocaleString('vi-VN')} ₫
+                                        </td>
                                     </tr>
+
                                 ))}
                                 </tbody>
                             </table>
@@ -191,9 +228,8 @@ const AdminOrderDetailPage: React.FC = () => {
                              <Link to={`/admin/customers/${customer?.id}`} className="flex items-center gap-2 font-semibold text-indigo-600 hover:underline">
                                 <User size={16}/> {customer?.firstName || ''} {customer?.lastName || 'Khách lẻ'}
                              </Link>
-                             <div className="flex items-center gap-2 text-gray-600"><Mail size={16}/> {customer?.email}</div>
                              <div className="flex items-center gap-2 text-gray-600"><Phone size={16}/> {customer?.phone}</div>
-                             <div className="flex items-start gap-2 text-gray-600"><MapPin size={16} className="mt-0.5 flex-shrink-0"/> {customer?.address}</div>
+                             <div className="flex items-start gap-2 text-gray-600"><Medal  size={16} className="mt-0.5 flex-shrink-0"/> {customer?.loyaltyPoints}</div>
                          </CardContent>
                     </Card>
                      <Card>

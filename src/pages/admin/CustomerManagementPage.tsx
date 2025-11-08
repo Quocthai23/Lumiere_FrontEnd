@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
 import type { Customer } from '../../types/customer';
-import { PlusCircle, File, ListFilter, Search } from 'lucide-react';
+import { PlusCircle, File, Search } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // --- Reusable UI Components ---
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -10,9 +10,6 @@ const Card = ({ children, className = '' }: { children: React.ReactNode, classNa
 );
 const CardHeader = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
     <div className={`p-4 border-b ${className}`}>{children}</div>
-);
-const CardTitle = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
-    <h3 className={`font-semibold text-lg ${className}`}>{children}</h3>
 );
 const CardContent = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
     <div className={`p-4 ${className}`}>{children}</div>
@@ -40,8 +37,8 @@ const CustomerManagementPage: React.FC = () => {
         const fetchCustomers = async () => {
             setIsLoading(true);
             try {
-                const response = await axiosClient.get('/customers?sort=id,asc');
-                setCustomers(response.data);
+                const response = await httpClient.get<Customer[]>('/customers?sort=id,asc');
+                setCustomers(response);
                 setError(null);
             } catch (err) {
                 setError('Không thể tải danh sách khách hàng.');

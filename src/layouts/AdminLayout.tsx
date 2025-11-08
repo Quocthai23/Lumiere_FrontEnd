@@ -7,7 +7,6 @@ import {
     Package,
     ShoppingCart,
     Users,
-    Warehouse,
     PackageSearch,
     Ticket,
     LogOut,
@@ -20,7 +19,7 @@ import {
     Search,
     Menu,
     X,
-    ChevronDown
+    ChevronDown, Factory
 } from "lucide-react";
 
 const NavItem = ({ to, icon: Icon, children, end = false }: { to: string, icon: React.ElementType, children: React.ReactNode, end?: boolean }) => {
@@ -68,7 +67,7 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
                     <NavItem to="/admin/reviews" icon={Star}>Đánh giá</NavItem>
                     <NavItem to="/admin/qa" icon={MessageSquare}>Hỏi & Đáp</NavItem>
                     <NavItem to="/admin/collections" icon={LayoutGrid}>Bộ sưu tập</NavItem>
-                    <NavItem to="/admin/warehouses" icon={Warehouse}>Kho hàng</NavItem>
+                    <NavItem to="/admin/warehouses" icon={Factory}>Nhà cung cấp</NavItem>
                     <NavItem to="/admin/inventory" icon={PackageSearch}>Tồn kho</NavItem>
                     <NavItem to="/admin/vouchers" icon={Ticket}>Khuyến mãi</NavItem>
                     <NavItem to="/admin/reports" icon={LineChart}>Báo cáo</NavItem>

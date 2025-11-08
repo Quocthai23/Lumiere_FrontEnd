@@ -3,6 +3,7 @@ import axiosClient from '../../api/axiosClient';
 import type { Question, Answer } from '../../types/qa';
 import { Link } from 'react-router-dom';
 import { MessageSquare, CornerDownRight } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // Giả định kiểu Question được mở rộng để chứa thông tin sản phẩm
 interface QuestionWithProduct extends Question {
@@ -23,8 +24,8 @@ const QAManagementPage: React.FC = () => {
     const fetchQuestions = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/qas?_expand=product');
-            setQuestions(response.data || []);
+            const response = await httpClient.get<Question[]>('/qas?_expand=product');
+            setQuestions(response || []);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách câu hỏi.');
