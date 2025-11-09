@@ -93,6 +93,17 @@ const VoucherManagementPage: React.FC = () => {
             alert("Đã có lỗi xảy ra.");
         }
     };
+    const handleDeleteVoucher = async (id: number) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này không? Hành động này không thể hoàn tác.')) {
+            try {
+                await httpClient.delete(`/vouchers/${id}`); 
+                setVouchers(prevVouchers => prevVouchers.filter(voucher => voucher.id !== id));
+            } catch (err) {
+                console.error("Lỗi khi xóa voucher:", err);
+                alert("Xóa thất bại. Mã giảm giá có thể đang được sử dụng trong các đơn hàng.");
+            }
+        }
+    };
     
     const getStatusClass = (status: string) => {
         switch (status) {
@@ -166,6 +177,9 @@ const VoucherManagementPage: React.FC = () => {
                                             <button onClick={() => handleOpenModalForEdit(v)} className="font-medium text-indigo-600 hover:underline">
                                                 Sửa
                                             </button>
+                                            <button onClick={() => handleDeleteVoucher(v.id)} className="font-medium text-indigo-600 hover:underline" title="Xóa">
+                                                    <Trash2 size={16} />
+                                                </button>
                                         </td>
                                     </tr>
                                 ))}
