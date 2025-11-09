@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import type { Product, ProductVariant } from '../../types/product';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
@@ -9,14 +9,55 @@ import ProductReviews from './ProductReviews';
 import ProductCarousel from '../../components/customer/ProductCarousel';
 import ProductQA from '../../components/customer/ProductQA';
 import StarRating from './StarRating';
-import { Heart, ShoppingCart, Info, MessageSquare, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Info, MessageSquare, Star, X } from 'lucide-react';
 import Breadcrumb from '../../components/customer/Breadcrumb';
 import ProductImageGallery from '../../components/customer/ProductImageGallery';
 import SocialShareButtons from '../../components/customer/SocialShareButtons';
 import StockNotificationForm from '../../components/customer/StockNotificationForm';
 
+// --- Component Modal Xác Nhận ---
+interface ConfirmationModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    message: string;
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fadeIn">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <X size={24} />
+                </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-gray-600 mb-6">{message}</p>
+                <div className="flex justify-end space-x-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-medium transition-colors"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors"
+                    >
+                        Đồng ý
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Main Component ---
 const ProductDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate(); // Khởi tạo hook navigate
     const { addToCart } = useCart();
     const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const { addProductToHistory } = useRecentlyViewed();
@@ -29,6 +70,9 @@ const ProductDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [activeTab, setActiveTab] = useState('description');
+
+    // State cho modal xác nhận wishlist
+    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -86,19 +130,28 @@ const ProductDetailPage: React.FC = () => {
         }
     };
 
+    // Xử lý khi nhấn nút trái tim
     const handleWishlistClick = () => {
         if (!product) return;
-        isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product.id);
+        if (isInWishlist(product.id)) {
+            removeFromWishlist(product.id);
+        } else {
+            setIsWishlistModalOpen(true);
+        }
+    };
+
+    // Hàm thực sự thêm vào wishlist và chuyển trang khi người dùng đồng ý
+    const confirmAddToWishlist = () => {
+        if (product) {
+            addToWishlist(product.id);
+            setIsWishlistModalOpen(false);
+            // Chuyển hướng đến trang Wishlist
+            navigate('/account/wishlist');
+        }
     };
 
     const isOutOfStock = selectedVariant ? selectedVariant.stockQuantity <= 0 : true;
     const productUrl = window.location.href;
-
-    const breadcrumbItems = [
-        { name: 'Trang chủ', href: '/' },
-        { name: 'Sản phẩm', href: '/products' },
-        { name: product.name, href: `/products/${product.slug}` }
-    ];
 
     const TabButton = ({ id, label, icon }: { id: string; label: string; icon: React.ReactNode }) => (
         <button
@@ -193,7 +246,7 @@ const ProductDetailPage: React.FC = () => {
                                 Thêm vào giỏ
                             </button>
                         )}
-                        <button onClick={handleWishlistClick} className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        <button onClick={handleWishlistClick} className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" title={isInWishlist(product.id) ? "Bỏ yêu thích" : "Thêm vào yêu thích"}>
                              <Heart className={`w-6 h-6 ${isInWishlist(product.id) ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
                         </button>
                     </div>
@@ -228,6 +281,15 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             <ProductCarousel title="Có thể bạn cũng thích" products={relatedProducts} />
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isWishlistModalOpen}
+                onClose={() => setIsWishlistModalOpen(false)}
+                onConfirm={confirmAddToWishlist}
+                title="Thêm vào danh sách yêu thích"
+                message={`Bạn có chắc chắn muốn thêm "${product.name}" vào danh sách yêu thích không?`}
+            />
         </div>
     );
 };
