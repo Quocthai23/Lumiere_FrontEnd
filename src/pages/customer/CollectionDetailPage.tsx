@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
 import type { Collection } from '../../types/collection';
 import ShopTheLook from '../../components/customer/ShopTheLook';
+import httpClient from "../../utils/HttpClient.ts";
 
 const CollectionDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -16,9 +16,9 @@ const CollectionDetailPage: React.FC = () => {
       window.scrollTo(0, 0);
       setIsLoading(true);
       try {
-        const response = await axiosClient.get(`/collections?slug.equals=${slug}`);
-        if (response.data && response.data.length > 0) {
-          setCollection(response.data[0]);
+        const response = await httpClient.get<Collection>(`/collections/${slug}`);
+        if (response) {
+          setCollection(response);
         } else {
           setError('Không tìm thấy bộ sưu tập.');
         }
@@ -51,7 +51,7 @@ const CollectionDetailPage: React.FC = () => {
         </div>
       </section>
 
-      <ShopTheLook look={collection.look} />
+      <ShopTheLook collection={collection} />
       
        <div className="text-center mt-12">
             <Link to="/collections" className="text-indigo-600 font-semibold hover:underline">

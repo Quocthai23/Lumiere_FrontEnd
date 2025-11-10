@@ -6,4 +6,5 @@ slug: string;
 description: string;
 imageUrl: string;
 productIds: number[];
+products: any[];
 }

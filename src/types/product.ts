@@ -21,7 +21,8 @@ export interface ProductVariant {
   isDefault: boolean;
   color?: string; 
   size?: string;
-  urlImage?: string
+  urlImage?: string;
+  product?: Product;
 }
 
 export interface Product {

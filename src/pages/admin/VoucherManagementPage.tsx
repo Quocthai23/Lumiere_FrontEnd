@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axiosClient from '../../api/axiosClient';
 import VoucherFormModal from '../../components/admin/VoucherFormModal';
 import type { Voucher } from '../../types/voucher';
-import { PlusCircle, Search } from 'lucide-react';
+import {Edit, PlusCircle, Search, Trash2} from 'lucide-react';
 import httpClient from "../../utils/HttpClient.ts";
+import ConfirmModal from "../../components/admin/ConfirmModal.tsx";
 
 // --- Reusable UI Components ---
 const Card = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => (
@@ -31,6 +32,15 @@ const VoucherManagementPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
+    const [confirmState, setConfirmState] = useState<{
+        open: boolean;
+        id?: number;
+    }>({ open: false });
+    const [deleting, setDeleting] = useState(false);
+
+    const requestDeleteVoucher = (id: number) => {
+        setConfirmState({ open: true, id });
+    };
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -93,17 +103,21 @@ const VoucherManagementPage: React.FC = () => {
             alert("Đã có lỗi xảy ra.");
         }
     };
-    const handleDeleteVoucher = async (id: number) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này không? Hành động này không thể hoàn tác.')) {
-            try {
-                await httpClient.delete(`/vouchers/${id}`); 
-                setVouchers(prevVouchers => prevVouchers.filter(voucher => voucher.id !== id));
-            } catch (err) {
-                console.error("Lỗi khi xóa voucher:", err);
-                alert("Xóa thất bại. Mã giảm giá có thể đang được sử dụng trong các đơn hàng.");
-            }
-        }
-    };
+
+    const handleDeleteVoucher = async () => {
+        if (!confirmState.id) return;
+        try {
+            setDeleting(true);
+            await httpClient.delete(`/vouchers/${confirmState.id}`);
+            setVouchers(prev => prev.filter(v => v.id !== confirmState.id));
+            setConfirmState({ open: false, id: undefined });
+        } catch (err) {
+            console.error("Lỗi khi xóa voucher:", err);
+            alert("Xóa thất bại. Mã giảm giá có thể đang được sử dụng trong các đơn hàng.");
+        } finally {
+            setDeleting(false);
+        }
+    };
     
     const getStatusClass = (status: string) => {
         switch (status) {
@@ -173,14 +187,26 @@ const VoucherManagementPage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">{v.usageCount || 0} / {v.usageLimit || '∞'}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button onClick={() => handleOpenModalForEdit(v)} className="font-medium text-indigo-600 hover:underline">
-                                                Sửa
-                                            </button>
-                                            <button onClick={() => handleDeleteVoucher(v.id)} className="font-medium text-indigo-600 hover:underline" title="Xóa">
-                                                    <Trash2 size={16} />
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end items-center gap-3">
+                                                <button
+                                                    onClick={() => handleOpenModalForEdit(v)}
+                                                    className="text-indigo-600 hover:text-indigo-700 focus:outline-none p-2 rounded-lg hover:bg-indigo-50"
+                                                    title="Sửa"
+                                                >
+                                                    <Edit size={16}/>
                                                 </button>
+
+                                                <button
+                                                    onClick={() => requestDeleteVoucher(v.id)}
+                                                    className="text-red-600 hover:text-red-700 focus:outline-none p-2 rounded-lg hover:bg-red-50"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 size={16}/>
+                                                </button>
+                                            </div>
                                         </td>
+
                                     </tr>
                                 ))}
                             </tbody>
@@ -197,6 +223,23 @@ const VoucherManagementPage: React.FC = () => {
                 onClose={handleCloseModal}
                 onSave={handleSaveVoucher}
                 voucher={editingVoucher}
+            />
+
+            <ConfirmModal
+                open={confirmState.open}
+                title="Xóa mã giảm giá?"
+                message={
+                    <>
+                        Hành động này <b>không thể hoàn tác</b>.
+                        <br />
+                        Bạn có chắc muốn xóa voucher này?
+                    </>
+                }
+                confirmText="Xóa vĩnh viễn"
+                cancelText="Hủy"
+                loading={deleting}
+                onConfirm={handleDeleteVoucher}
+                onClose={() => !deleting && setConfirmState({ open: false })}
             />
         </div>
     );
