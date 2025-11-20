@@ -7,7 +7,7 @@ interface ProductImageGalleryProps {
 
 const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ images, productName }) => {
   const [mainImage, setMainImage] = useState(images[0] || `https://placehold.co/600x800/EFEFEF/333333?text=${encodeURIComponent(productName)}`);
-
+    console.log("images", images);
   return (
     <div className="flex flex-col-reverse md:flex-row gap-4">
       {/* Thumbnails */}

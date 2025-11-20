@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import httpClient from '../../utils/HttpClient'; // hoặc đường dẫn/axios client của bạn
 
-// --- Reusable Accordion Component ---
 interface AccordionItemProps {
     title: string;
     children: React.ReactNode;
@@ -25,90 +25,79 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ title, children, isOpen, 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
             </svg>
         </button>
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 py-4' : 'max-h-0'}`}>
+        <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                isOpen ? 'max-h-96 py-4' : 'max-h-0'
+            }`}
+        >
             {children}
         </div>
     </div>
 );
 
-
-// --- Main ProductFilterSidebar Component ---
+// ==== Types ====
 
 interface Filters {
-  'price.greaterThanOrEqual'?: string;
-  'price.lessThanOrEqual'?: string;
-  'category.in'?: string;
-  'variants.color.equals'?: string;
-  'variants.size.in'?: string; // New size filter
-  'material.in'?: string;      // New material filter
+    'price.greaterThanOrEqual'?: string;
+    'price.lessThanOrEqual'?: string;
+    'categoryId.in'?: string;
 }
 
 interface ProductFilterSidebarProps {
     onApplyFilters: (filters: Filters) => void;
 }
 
-// Danh sách các tùy chọn lọc
-const categories = ['Áo Thun', 'Áo Sơ Mi', 'Quần Jeans', 'Váy', 'Áo Khoác', 'Đồ Ngủ'];
-const colors = ['#000000', '#FFFFFF', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6'];
-const colorNames: { [key: string]: string } = {
-    '#000000': 'Đen',
-    '#FFFFFF': 'Trắng',
-    '#3b82f6': 'Xanh dương',
-    '#ef4444': 'Đỏ',
-    '#f59e0b': 'Vàng',
-    '#8b5cf6': 'Tím'
-};
-const sizes = ['S', 'M', 'L', 'XL'];
-const materials = ['Cotton', 'Denim', 'Polyester', 'Kaki', 'Voan'];
-
+interface Category {
+    id: number;
+    name: string;
+}
 
 const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilters }) => {
     const [minPrice, setMinPrice] = useState('0');
-    const [maxPrice, setMaxPrice] = useState('2000000');
+    const [maxPrice, setMaxPrice] = useState('200000000');
+
+    const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedColor, setSelectedColor] = useState<string>('');
-    const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-    const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-    
+
     const [openSections, setOpenSections] = useState({
         price: true,
         category: true,
-        color: true,
-        size: true,
-        material: true,
     });
 
     const toggleSection = (section: keyof typeof openSections) => {
-        setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+        setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
     };
 
     const handleCheckboxChange = (
-        setter: React.Dispatch<React.SetStateAction<string[]>>, 
+        setter: React.Dispatch<React.SetStateAction<string[]>>,
         value: string
     ) => {
-        setter(prev =>
-            prev.includes(value)
-                ? prev.filter(item => item !== value)
-                : [...prev, value]
+        setter((prev) =>
+            prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
         );
     };
-    
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await httpClient.get<Category[]>('/categories?size=1000&sort=id,asc');
+                setCategories(res);
+            } catch (e) {
+                console.error('Failed to load categories', e);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
     const handleApplyClick = () => {
         const newFilters: Filters = {};
+
         if (minPrice !== '0') newFilters['price.greaterThanOrEqual'] = minPrice;
-        if (maxPrice !== '2000000') newFilters['price.lessThanOrEqual'] = maxPrice;
-        
+        if (maxPrice !== '200000000') newFilters['price.lessThanOrEqual'] = maxPrice;
+
         if (selectedCategories.length > 0) {
-            newFilters['category.in'] = selectedCategories.join(',');
-        }
-        if (selectedColor) {
-            newFilters['variants.color.equals'] = colorNames[selectedColor];
-        }
-        if (selectedSizes.length > 0) {
-            newFilters['variants.size.in'] = selectedSizes.join(',');
-        }
-        if (selectedMaterials.length > 0) {
-            newFilters['material.in'] = selectedMaterials.join(',');
+            newFilters['categoryId.in'] = selectedCategories.join(',');
         }
 
         onApplyFilters(newFilters);
@@ -116,128 +105,109 @@ const ProductFilterSidebar: React.FC<ProductFilterSidebarProps> = ({ onApplyFilt
 
     const handleResetClick = () => {
         setMinPrice('0');
-        setMaxPrice('2000000');
+        setMaxPrice('200000000');
         setSelectedCategories([]);
-        setSelectedColor('');
-        setSelectedSizes([]);
-        setSelectedMaterials([]);
         onApplyFilters({});
     };
 
-  return (
-    <aside className="w-full bg-white p-6 rounded-2xl shadow-lg border h-fit sticky top-24">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold text-gray-900">Bộ lọc</h3>
-        <button 
-          onClick={handleResetClick}
-          className="text-sm font-semibold text-indigo-600 hover:underline"
-        >
-          Xóa tất cả
-        </button>
-      </div>
-      
-      <AccordionItem title="Khoảng giá" isOpen={openSections.price} onToggle={() => toggleSection('price')}>
-        <div className="px-1">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>{Number(minPrice).toLocaleString('vi-VN')}đ</span>
-                <span>{Number(maxPrice).toLocaleString('vi-VN')}đ</span>
+    return (
+        <aside className="w-full bg-white p-6 rounded-2xl shadow-lg border h-fit sticky top-24">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Bộ lọc</h3>
+                <button
+                    onClick={handleResetClick}
+                    className="text-sm font-semibold text-indigo-600 hover:underline"
+                >
+                    Xóa tất cả
+                </button>
             </div>
-            <div className="relative h-1 bg-gray-200 rounded-full">
-                <div className="absolute h-1 bg-indigo-500 rounded-full" style={{ 
-                    left: `${(Number(minPrice) / 2000000) * 100}%`, 
-                    right: `${100 - (Number(maxPrice) / 2000000) * 100}%` 
-                }}></div>
-                 <input type="range" min="0" max="2000000" step="50000" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="absolute w-full h-1 opacity-0 cursor-pointer" />
-                 <input type="range" min="0" max="2000000" step="50000" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="absolute w-full h-1 opacity-0 cursor-pointer" />
-            </div>
-        </div>
-      </AccordionItem>
-      
-      <AccordionItem title="Danh mục" isOpen={openSections.category} onToggle={() => toggleSection('category')}>
-        <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-          {categories.map(category => (
-            <label key={category} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <input 
-                type="checkbox" 
-                checked={selectedCategories.includes(category)}
-                onChange={() => handleCheckboxChange(setSelectedCategories, category)}
-                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
-              />
-              <span className="ml-3 text-gray-700">{category}</span>
-            </label>
-          ))}
-        </div>
-      </AccordionItem>
 
-      <AccordionItem title="Kích cỡ" isOpen={openSections.size} onToggle={() => toggleSection('size')}>
-        <div className="flex flex-wrap gap-3">
-          {sizes.map(size => (
-            <label key={size} className="cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={selectedSizes.includes(size)}
-                onChange={() => handleCheckboxChange(setSelectedSizes, size)}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-10 rounded-lg border flex items-center justify-center font-semibold text-gray-600
-                            peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600
-                            hover:border-indigo-400 transition-colors">
-                {size}
-              </div>
-            </label>
-          ))}
-        </div>
-      </AccordionItem>
-      
-      <AccordionItem title="Chất liệu" isOpen={openSections.material} onToggle={() => toggleSection('material')}>
-        <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-          {materials.map(material => (
-            <label key={material} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <input 
-                type="checkbox" 
-                checked={selectedMaterials.includes(material)}
-                onChange={() => handleCheckboxChange(setSelectedMaterials, material)}
-                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
-              />
-              <span className="ml-3 text-gray-700">{material}</span>
-            </label>
-          ))}
-        </div>
-      </AccordionItem>
-      
-      <AccordionItem title="Màu sắc" isOpen={openSections.color} onToggle={() => toggleSection('color')}>
-        <div className="flex flex-wrap gap-4">
-           {colors.map(color => (
-            <div key={color} className="relative group">
-                <label className="cursor-pointer">
-                <input 
-                    type="radio" 
-                    name="color" 
-                    value={color}
-                    checked={selectedColor === color}
-                    onChange={() => setSelectedColor(color)}
-                    className="sr-only peer" 
-                />
-                <span 
-                    className={`h-9 w-9 block rounded-full border-2 transition-transform transform group-hover:scale-110 ${selectedColor === color ? 'ring-2 ring-offset-2 ring-indigo-500' : 'border-gray-200'}`} 
-                    style={{ backgroundColor: color }}
-                ></span>
-                </label>
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block px-2 py-1 bg-gray-800 text-white text-xs rounded-md whitespace-nowrap">
-                    {colorNames[color]}
+            {/* Khoảng giá */}
+            <AccordionItem
+                title="Khoảng giá"
+                isOpen={openSections.price}
+                onToggle={() => toggleSection('price')}
+            >
+                <div className="px-1 space-y-3">
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Giá tối thiểu
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-2 flex items-center text-gray-500 text-sm">
+                                    đ
+                                </span>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step={1000}
+                                    value={minPrice}
+                                    onChange={(e) => setMinPrice(e.target.value)}
+                                    className="w-full pl-6 pr-2 py-1.5 border rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="0"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Giá tối đa
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-2 flex items-center text-gray-500 text-sm">
+                                    đ
+                                </span>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step={1000}
+                                    value={maxPrice}
+                                    onChange={(e) => setMaxPrice(e.target.value)}
+                                    className="w-full pl-6 pr-2 py-1.5 border rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="200000000"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-          ))}
-        </div>
-      </AccordionItem>
+            </AccordionItem>
 
-      <button 
-        onClick={handleApplyClick}
-        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold mt-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-        Áp dụng
-      </button>
-    </aside>
-  );
+            {/* Danh mục */}
+            <AccordionItem
+                title="Danh mục"
+                isOpen={openSections.category}
+                onToggle={() => toggleSection('category')}
+            >
+                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                    {categories.map((category) => (
+                        <label
+                            key={category.id}
+                            className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedCategories.includes(String(category.id))}
+                                onChange={() =>
+                                    handleCheckboxChange(setSelectedCategories, String(category.id))
+                                }
+                                className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="ml-3 text-gray-700">{category.name}</span>
+                        </label>
+                    ))}
+                </div>
+            </AccordionItem>
+
+            <button
+                onClick={handleApplyClick}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold mt-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+            >
+                Áp dụng
+            </button>
+        </aside>
+    );
 };
 
 export default ProductFilterSidebar;

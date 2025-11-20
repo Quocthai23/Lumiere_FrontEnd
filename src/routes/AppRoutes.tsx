@@ -67,7 +67,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/" element={<CustomerLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="products" element={<ProductPage />} />
-                    <Route path="products/:slug" element={<ProductDetailPage />} />
+                    <Route path="products/:id" element={<ProductDetailPage />} />
                     <Route path="collections" element={<CollectionsPage />} />
                     <Route path="collections/:slug" element={<CollectionDetailPage />} />
                     <Route path="cart" element={<CartPage />} />
