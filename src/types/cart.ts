@@ -4,5 +4,6 @@ export interface CartItem {
   product: Product;
   variant: ProductVariant;
   quantity: number;
+  id: number;
 }
 
