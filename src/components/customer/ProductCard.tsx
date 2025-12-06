@@ -15,10 +15,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { openModal } = useQuickView();
   const { isInCompare, addItem, removeItem } = useComparison();
 
-  // variants & price
+  // Tính range giá từ variants hoặc product
+  const getPriceRange = () => {
+    const variants = product?.variants || [];
+    
+    if (variants.length > 0) {
+      // Lấy giá từ variants
+      const prices = variants
+        .map((v: any) => v?.price)
+        .filter((price: number) => price != null && price > 0);
+      
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const currency = variants[0]?.currency || 'VND';
+        
+        if (minPrice === maxPrice) {
+          return { min: minPrice, max: maxPrice, currency, isRange: false };
+        }
+        return { min: minPrice, max: maxPrice, currency, isRange: true };
+      }
+    }
+    
+    // Nếu không có variants, lấy từ product (nếu có)
+    const productPrice = product?.price;
+    if (productPrice != null && productPrice > 0) {
+      return { 
+        min: productPrice, 
+        max: productPrice, 
+        currency: product?.currency || 'VND', 
+        isRange: false 
+      };
+    }
+    
+    return { min: 0, max: 0, currency: 'VND', isRange: false };
+  };
+
+  const priceRange = getPriceRange();
   const defaultVariant = product?.variants?.find((v: any) => v?.isDefault);
-  const price = defaultVariant?.price ?? 0;
-  const currency = defaultVariant?.currency ?? 'VND';
 
   // attachments: lấy ảnh chính từ productAttachments[].attachment.url
   const attachments: any[] | undefined = product?.productAttachments;
@@ -32,16 +66,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       `https://placehold.co/300x400/EFEFEF/333333?text=${encodeURIComponent(product?.name ?? '')}`;
 
 
-  const isLiked = isInWishlist(product.id);
+  const variantId = defaultVariant?.id;
+  const isLiked = variantId ? isInWishlist(variantId) : false;
   const isComparing = isInCompare(product.id);
 
   const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!variantId) return;
     if (isLiked) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(variantId);
     } else {
-      addToWishlist(product);
+      addToWishlist(variantId, product, defaultVariant);
     }
   };
 
@@ -139,7 +175,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
 
             <p className="mt-2 text-lg font-bold text-indigo-600">
-              {price.toLocaleString('vi-VN')} {currency}
+              {priceRange.isRange ? (
+                <>
+                  {priceRange.min.toLocaleString('vi-VN')} - {priceRange.max.toLocaleString('vi-VN')} {priceRange.currency}
+                </>
+              ) : (
+                <>
+                  {priceRange.min.toLocaleString('vi-VN')} {priceRange.currency}
+                </>
+              )}
             </p>
           </div>
         </Link>

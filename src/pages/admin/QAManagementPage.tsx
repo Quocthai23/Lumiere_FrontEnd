@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axiosClient from '../../api/axiosClient';
 import type { Question, Answer } from '../../types/qa';
 import { Link } from 'react-router-dom';
 import { MessageSquare, CornerDownRight } from 'lucide-react';
-import httpClient from "../../utils/HttpClient.ts";
+import { qaApi } from '../../api/qaApi';
 
 // Giả định kiểu Question được mở rộng để chứa thông tin sản phẩm
 interface QuestionWithProduct extends Question {
@@ -24,8 +23,8 @@ const QAManagementPage: React.FC = () => {
     const fetchQuestions = async () => {
         setIsLoading(true);
         try {
-            const response = await httpClient.get<Question[]>('/qas?_expand=product');
-            setQuestions(response || []);
+            const result = await qaApi.getAllQuestions(0, 100);
+            setQuestions(result.content || []);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách câu hỏi.');
@@ -39,26 +38,27 @@ const QAManagementPage: React.FC = () => {
         fetchQuestions();
     }, []);
 
-    const handleReplySubmit = (questionId: number) => {
+    const handleReplySubmit = async (questionId: number) => {
         if (!replyText.trim()) return;
 
-        // Mock logic: In a real app, this would be a POST request to an answers endpoint
-        console.log(`Replying to question ${questionId}: ${replyText}`);
-        const newAnswer: Answer = {
-            id: Date.now(),
-            author: 'Lumiere Store',
-            answerText: replyText,
-            createdAt: new Date().toISOString()
-        };
+        try {
+            const updatedQuestion = await qaApi.addAnswer(questionId, {
+                author: 'Lumiere Store',
+                answerText: replyText
+            });
 
-        setQuestions(questions.map(q => 
-            q.id === questionId 
-                ? { ...q, answers: [...q.answers, newAnswer] } 
-                : q
-        ));
+            setQuestions(questions.map(q => 
+                q.id === questionId 
+                    ? updatedQuestion 
+                    : q
+            ));
 
-        setReplyingTo(null);
-        setReplyText('');
+            setReplyingTo(null);
+            setReplyText('');
+        } catch (err) {
+            console.error('Lỗi khi gửi câu trả lời:', err);
+            alert('Không thể gửi câu trả lời. Vui lòng thử lại.');
+        }
     };
     
     const startReplying = (questionId: number) => {

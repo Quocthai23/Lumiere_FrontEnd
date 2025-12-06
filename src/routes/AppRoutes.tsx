@@ -45,6 +45,7 @@ import ReviewManagementPage from '../pages/admin/ReviewManagementPage';
 import QAManagementPage from '../pages/admin/QAManagementPage';
 import CollectionManagementPage from '../pages/admin/CollectionManagementPage'; // Import trang mới
 import AdminCollectionEditPage from '../pages/admin/AdminCollectionEditPage'; // Import trang mới
+import ContactManagementPage from '../pages/admin/ContactManagementPage';
 
 
 // Auth Pages
@@ -119,6 +120,7 @@ const AppRoutes: React.FC = () => {
                         <Route path="notifications" element={<AdminNotificationsPage />} />
                         <Route path="reviews" element={<ReviewManagementPage />} />
                         <Route path="qa" element={<QAManagementPage />} />
+                        <Route path="contacts" element={<ContactManagementPage />} />
                         <Route path="collections" element={<CollectionManagementPage />} /> {/* Thêm route mới */}
                         <Route path="collections/new" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}
                         <Route path="collections/edit/:collectionId" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}

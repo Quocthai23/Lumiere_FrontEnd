@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '../../types/product';
+import type { CategoryWithProductsDTO } from '../../types/category';
 import ProductCard from '../../components/customer/ProductCard';
 import axiosClient from '../../api/axiosClient';
 import { ArrowRight, ShoppingBag, Zap } from 'lucide-react'; 
@@ -10,38 +11,38 @@ import FlashSaleCountdown from '../../components/customer/FlashSaleCountdown';
 const HomePage: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryWithProductsDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchHomeData = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosClient.get('/products', {
-          params: {
-            'status.equals': 'ACTIVE',
-            page: 0,
-            size: 8, 
-          }
+        // Fetch best-selling products
+        const bestSellingResponse = await axiosClient.get('/home/best-selling', {
+          params: { limit: 4 }
         });
-        const activeProducts = response.data;
-        setFeaturedProducts(activeProducts.slice(0, 4));
+        setFeaturedProducts(bestSellingResponse.data || []);
 
-        setNewArrivals(activeProducts.slice(4, 8));
+        // Fetch new arrivals
+        const newArrivalsResponse = await axiosClient.get('/home/new-arrivals', {
+          params: { limit: 4 }
+        });
+        setNewArrivals(newArrivalsResponse.data || []);
+
+        // Fetch shop by category
+        const categoriesResponse = await axiosClient.get('/home/shop-by-category', {
+          params: { productsPerCategory: 4 }
+        });
+        setCategories(categoriesResponse.data || []);
       } catch (error) {
-        console.error("Không thể tải sản phẩm trang chủ:", error);
+        console.error("Không thể tải dữ liệu trang chủ:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProducts();
+    fetchHomeData();
   }, []);
-
-  const categories = [
-    { name: 'Áo Thun', href: '/products?category=t-shirt', image: 'https://placehold.co/400x500/EFEFEF/333333?text=T-Shirts' },
-    { name: 'Áo Sơ Mi', href: '/products?category=shirt', image: 'https://placehold.co/400x500/EFEFEF/333333?text=Shirts' },
-    { name: 'Quần Jeans', href: '/products?category=jeans', image: 'https://placehold.co/400x500/EFEFEF/333333?text=Jeans' },
-    { name: 'Váy', href: '/products?category=dress', image: 'https://placehold.co/400x500/EFEFEF/333333?text=Dresses' },
-  ];
 
   return (
     <div className="space-y-24">
@@ -95,16 +96,34 @@ const HomePage: React.FC = () => {
             </h2>
             <p className="text-gray-500 mt-2">Tìm kiếm phong cách yêu thích của bạn một cách dễ dàng.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {categories.map(category => (
-                <Link to={category.href} key={category.name} className="group relative rounded-lg overflow-hidden h-80">
-                    <img src={category.image} alt={category.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
-                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                        <h3 className="text-white text-2xl font-bold tracking-wider">{category.name}</h3>
-                    </div>
+        {isLoading ? (
+          <p className="text-center">Đang tải danh mục...</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {categories.map(category => {
+              const categoryImage = category.imageUrl || 
+                (category.products && category.products.length > 0 && category.products[0].attachmentDTOS && category.products[0].attachmentDTOS.length > 0 
+                  ? category.products[0].attachmentDTOS[0].url 
+                  : 'https://placehold.co/400x500/EFEFEF/333333?text=' + encodeURIComponent(category.name));
+              const categoryHref = category.slug 
+                ? `/products?category=${category.slug}` 
+                : `/products?categoryId=${category.id}`;
+              
+              return (
+                <Link to={categoryHref} key={category.id} className="group relative rounded-lg overflow-hidden h-80">
+                  <img 
+                    src={categoryImage} 
+                    alt={category.name} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <h3 className="text-white text-2xl font-bold tracking-wider">{category.name}</h3>
+                  </div>
                 </Link>
-            ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
        <section>

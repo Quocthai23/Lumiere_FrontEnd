@@ -9,3 +9,14 @@ export interface Voucher {
   usageLimit?: number;
   usageCount?: number;
 }
+
+export interface VoucherCalculateRequestDTO {
+  voucherCode: string;
+  orderAmount: number;
+}
+
+export interface VoucherCalculateResponseDTO {
+  discountAmount: number;
+  finalAmount: number;
+  voucher: Voucher;
+}

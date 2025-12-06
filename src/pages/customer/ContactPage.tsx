@@ -1,32 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { contactApi } from '../../api/contactApi';
+import WebSocketChat from '../../components/customer/WebSocketChat';
+import { useAuth } from '../../hooks/useAuth';
 
 const ContactPage: React.FC = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     subject: '',
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [submittedContactId, setSubmittedContactId] = useState<number | undefined>();
+  const [sessionId, setSessionId] = useState<number | undefined>();
+  const [customerInfo, setCustomerInfo] = useState<{ email: string; fullName: string } | null>(null);
+
+  // Load sessionId từ localStorage khi component mount
+  useEffect(() => {
+    const savedSessionId = localStorage.getItem('contactSessionId');
+    if (savedSessionId) {
+      const parsedSessionId = parseInt(savedSessionId, 10);
+      if (!isNaN(parsedSessionId)) {
+        setSessionId(parsedSessionId);
+      }
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errorMessage) setErrorMessage('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage('');
+    setErrorMessage('');
 
-    // Giả lập việc gửi form
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitMessage('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
-      setFormData({ name: '', email: '', subject: '', message: '' });
+    try {
+      const result = await contactApi.submitContactMessage({
+        fullName: formData.fullName,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      
+      setSubmittedContactId(result.id);
+      
+      // Lưu sessionId nếu có trong response
+      if (result.sessionId) {
+        setSessionId(result.sessionId);
+        // Lưu vào localStorage để giữ lại khi refresh
+        localStorage.setItem('contactSessionId', result.sessionId.toString());
+      }
+      
+      setCustomerInfo({ email: formData.email, fullName: formData.fullName });
+      setSubmitMessage('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể. Hộp chat đã được mở để bạn có thể tiếp tục trao đổi.');
+      setFormData({ fullName: '', email: '', subject: '', message: '' });
       setTimeout(() => setSubmitMessage(''), 5000); // Ẩn thông báo sau 5 giây
-    }, 1000);
+    } catch (error: any) {
+      console.error('Error submitting contact message:', error);
+      setErrorMessage(
+        error.response?.data?.message || 
+        'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,8 +158,8 @@ const ContactPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Họ và tên</label>
-                  <input type="text" name="name" id="name" value={formData.name} onChange={handleInputChange} required className="mt-1 py-3 px-4 block w-full bg-gray-50 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Họ và tên</label>
+                  <input type="text" name="fullName" id="fullName" value={formData.fullName} onChange={handleInputChange} required className="mt-1 py-3 px-4 block w-full bg-gray-50 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
@@ -135,8 +180,13 @@ const ContactPage: React.FC = () => {
                 </button>
               </div>
               {submitMessage && (
-                <div className="text-center text-green-600 font-medium">
+                <div className="text-center text-green-600 font-medium p-3 bg-green-50 rounded-md">
                   {submitMessage}
+                </div>
+              )}
+              {errorMessage && (
+                <div className="text-center text-red-600 font-medium p-3 bg-red-50 rounded-md">
+                  {errorMessage}
                 </div>
               )}
             </form>
@@ -144,6 +194,16 @@ const ContactPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* WebSocket Chat Widget - chỉ hiển thị sau khi submit form thành công */}
+      {submittedContactId && customerInfo && (
+        <WebSocketChat
+          contactMessageId={submittedContactId}
+          sessionId={sessionId}
+          customerEmail={customerInfo.email}
+          customerName={customerInfo.fullName}
+        />
+      )}
     </div>
   );
 };

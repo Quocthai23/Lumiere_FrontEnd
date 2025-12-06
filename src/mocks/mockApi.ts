@@ -149,11 +149,30 @@ export const handleGet = async (url: string, params: URLSearchParams) => {
         return createResponse(mockData.collections, mockData.collections.length);
     }
 
-    // Addresses
+    // Addresses (legacy - keep for backward compatibility)
     if (url.startsWith('/addresses')) {
         const customerId = params.get('customerId.equals') || '1';
         const addresses = mockData.addresses.filter(a => a.customerId === parseInt(customerId, 10));
         return createResponse(addresses, addresses.length);
+    }
+
+    // Customer Infos (new API)
+    if (url.startsWith('/customer-infos')) {
+        // GET /customer-infos/customer/:customerId
+        const customerMatch = url.match(/\/customer-infos\/customer\/(\d+)/);
+        if (customerMatch) {
+            const customerId = parseInt(customerMatch[1], 10);
+            const addresses = mockData.addresses.filter(a => a.customerId === customerId);
+            return createResponse(addresses, addresses.length);
+        }
+        // GET /customer-infos/:id
+        const idMatch = url.match(/\/customer-infos\/(\d+)$/);
+        if (idMatch) {
+            const address = mockData.addresses.find(a => a.id === parseInt(idMatch[1], 10));
+            return createResponse(address || null);
+        }
+        // GET /customer-infos (all with pagination)
+        return createResponse(mockData.addresses, mockData.addresses.length);
     }
 
     // Product Variants
@@ -344,8 +363,23 @@ export const handlePost = async (url: string, data: any) => {
         return createResponse(newOrder, 201);
     }
 
-    // Create Address
+    // Create Address (legacy)
     if (url.startsWith('/addresses')) {
+        const newAddress: Address = {
+            ...data,
+            id: Math.max(...mockData.addresses.map(a => a.id), 0) + 1,
+        };
+        if (newAddress.isDefault) {
+            mockData.addresses.forEach(addr => {
+                if (addr.customerId === newAddress.customerId) addr.isDefault = false;
+            });
+        }
+        mockData.addresses.push(newAddress);
+        return createResponse(newAddress, 201);
+    }
+
+    // Create Customer Info (new API)
+    if (url.startsWith('/customer-infos')) {
         const newAddress: Address = {
             ...data,
             id: Math.max(...mockData.addresses.map(a => a.id), 0) + 1,
@@ -457,9 +491,44 @@ export const handlePost = async (url: string, data: any) => {
 export const handlePut = async (url: string, data: any) => {
     await sleep(300);
 
-    // Update Address
+    // Set Default Customer Info (new API) - must check before regular update
+    if (url.match(/\/customer-infos\/(\d+)\/set-default/)) {
+        const id = parseInt(url.match(/\/customer-infos\/(\d+)/)![1], 10);
+        const customerIdParam = url.match(/customerId=(\d+)/);
+        const customerId = customerIdParam ? parseInt(customerIdParam[1], 10) : null;
+        const address = mockData.addresses.find(a => a.id === id);
+        if (address) {
+            // Set all addresses for this customer to not default
+            mockData.addresses.forEach(addr => {
+                if (customerId && addr.customerId === customerId) {
+                    addr.isDefault = addr.id === id;
+                } else if (addr.customerId === address.customerId) {
+                    addr.isDefault = addr.id === id;
+                }
+            });
+            return createResponse(address);
+        }
+    }
+
+    // Update Address (legacy)
     if (url.match(/\/addresses\/(\d+)/)) {
         const id = parseInt(url.match(/\/addresses\/(\d+)/)![1], 10);
+        const index = mockData.addresses.findIndex(a => a.id === id);
+        if (index > -1) {
+            const updatedAddress = { ...mockData.addresses[index], ...data };
+            if (updatedAddress.isDefault) {
+                mockData.addresses.forEach(addr => {
+                    if (addr.customerId === updatedAddress.customerId) addr.isDefault = false;
+                });
+            }
+            mockData.addresses[index] = updatedAddress;
+            return createResponse(updatedAddress);
+        }
+    }
+
+    // Update Customer Info (new API)
+    if (url.match(/\/customer-infos\/(\d+)/)) {
+        const id = parseInt(url.match(/\/customer-infos\/(\d+)/)![1], 10);
         const index = mockData.addresses.findIndex(a => a.id === id);
         if (index > -1) {
             const updatedAddress = { ...mockData.addresses[index], ...data };
@@ -502,9 +571,19 @@ export const handlePut = async (url: string, data: any) => {
 export const handleDelete = async (url: string) => {
     await sleep(300);
 
-    // Delete Address
+    // Delete Address (legacy)
     if (url.match(/\/addresses\/(\d+)/)) {
         const id = parseInt(url.match(/\/addresses\/(\d+)/)![1], 10);
+        const index = mockData.addresses.findIndex(a => a.id === id);
+        if (index > -1) {
+            mockData.addresses.splice(index, 1);
+            return createResponse({}, 204);
+        }
+    }
+
+    // Delete Customer Info (new API)
+    if (url.match(/\/customer-infos\/(\d+)$/)) {
+        const id = parseInt(url.match(/\/customer-infos\/(\d+)/)![1], 10);
         const index = mockData.addresses.findIndex(a => a.id === id);
         if (index > -1) {
             mockData.addresses.splice(index, 1);
@@ -531,7 +610,7 @@ export const handleDelete = async (url: string) => {
 export const handlePatch = async (url: string, data: any) => {
     await sleep(300);
 
-    // Set Default Address
+    // Set Default Address (legacy)
     if (url.match(/\/addresses\/(\d+)\/set-default/)) {
         const id = parseInt(url.match(/\/addresses\/(\d+)/)![1], 10);
         const address = mockData.addresses.find(a => a.id === id);

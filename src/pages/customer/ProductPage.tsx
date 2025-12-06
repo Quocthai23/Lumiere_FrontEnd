@@ -39,9 +39,41 @@ const ProductPage: React.FC = () => {
                 };
 
                 const data = await httpClient.get<any>('/products/search', allParams);
+                let productsList = data.content || [];
 
-                setProducts(data.content);
+                // Fetch variants cho các product chưa có variants
+                const productsWithoutVariants = productsList.filter(
+                    (p: Product) => !p.variants || p.variants.length === 0
+                );
+                
+                if (productsWithoutVariants.length > 0) {
+                    const productIds = productsWithoutVariants.map((p: Product) => p.id);
+                    try {
+                        const variantsRes = await httpClient.get<any[]>(
+                            `/product-variants/by-product-ids?productIds=${productIds.join(',')}`
+                        );
+                        
+                        // Gom variants theo productId
+                        const variantsByProduct = (variantsRes || []).reduce<Record<number, any[]>>((acc, v) => {
+                            if (!v?.product?.id) return acc;
+                            (acc[v.product.id] ||= []).push(v);
+                            return acc;
+                        }, {});
+                        
+                        // Gán variants vào products
+                        productsList = productsList.map((p: Product) => {
+                            if (variantsByProduct[p.id]) {
+                                return { ...p, variants: variantsByProduct[p.id] };
+                            }
+                            return p;
+                        });
+                    } catch (variantsErr) {
+                        console.warn('Không thể tải variants:', variantsErr);
+                        // Tiếp tục với products không có variants
+                    }
+                }
 
+                setProducts(productsList);
                 setTotalPages(data.totalPages);
             } catch (err) {
                 setError('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.');
@@ -99,15 +131,6 @@ const ProductPage: React.FC = () => {
 
     return (
         <div className="bg-gray-50">
-            <section className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg shadow-lg mb-12">
-                <div className="container mx-auto px-6 py-12 text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Bộ Sưu Tập Mới Nhất</h1>
-                    <p className="text-lg md:text-xl text-indigo-200 mt-4 max-w-2xl mx-auto">
-                        Khám phá những thiết kế độc đáo và chất liệu cao cấp trong bộ sưu tập mùa này.
-                    </p>
-                </div>
-            </section>
-
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                     <div className="lg:col-span-1">

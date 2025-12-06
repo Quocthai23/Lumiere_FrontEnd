@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Product, ProductVariant } from '../../types/product';
+import type { ProductVariant } from '../../types/product';
 import { useCart } from '../../contexts/CartContext';
 import { useQuickView } from '../../contexts/QuickViewContext';
 import { useWishlist } from '../../contexts/WishlistContext';
@@ -48,12 +48,13 @@ const QuickViewModal: React.FC = () => {
     }
   };
   
-  const handleWishlistClick = () => {
-    if (!productInView) return;
-    if (isInWishlist(productInView.id)) {
-        removeFromWishlist(productInView.id);
+  const handleWishlistClick = async () => {
+    if (!productInView || !selectedVariant) return;
+    const variantId = selectedVariant.id;
+    if (isInWishlist(variantId)) {
+        await removeFromWishlist(variantId);
     } else {
-        addToWishlist(productInView.id);
+        await addToWishlist(variantId, productInView, selectedVariant);
     }
   };
 
@@ -76,8 +77,8 @@ const QuickViewModal: React.FC = () => {
         <div className="w-full md:w-1/2 p-6 flex flex-col overflow-y-auto">
              <div className="flex justify-between items-start">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{productInView.name}</h2>
-                 <button onClick={handleWishlistClick} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${isInWishlist(productInView.id) ? 'text-red-500' : 'text-gray-400'}`} fill={isInWishlist(productInView.id) ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
+                 <button onClick={handleWishlistClick} disabled={!selectedVariant} className="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${selectedVariant && isInWishlist(selectedVariant.id) ? 'text-red-500' : 'text-gray-400'}`} fill={selectedVariant && isInWishlist(selectedVariant.id) ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
                 </button>
              </div>
              

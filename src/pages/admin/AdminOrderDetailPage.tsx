@@ -97,6 +97,14 @@ const AdminOrderDetailPage: React.FC = () => {
             // Gắn vào orderResponse
             orderResponse.orderItems = await httpClient.get<OrderItem[]>(`/order-items/by-order/${orderId}`);
 
+            // Lấy lịch sử trạng thái từ endpoint mới: GET /orders/{id}/status-history
+            try {
+                const statusHistoryResponse = await httpClient.get(`/orders/${orderId}/status-history`);
+                orderResponse.orderStatusHistory = statusHistoryResponse;
+            } catch (historyErr) {
+                console.warn("Không thể tải lịch sử trạng thái:", historyErr);
+            }
+
             setOrder(orderResponse);
             setStatusData({
                 status: orderResponse.status,
@@ -131,11 +139,27 @@ const AdminOrderDetailPage: React.FC = () => {
     const handleUpdateStatus = async () => {
         if (!order) return;
         try {
-            await httpClient.post(`/orders/${order.id}`, statusData);
+            // Sử dụng endpoint mới từ backend: PUT /orders/{id}/status
+            await httpClient.put(`/orders/${order.id}/status`, {
+                status: statusData.status,
+                description: `Cập nhật trạng thái đơn hàng thành ${statusData.status}`
+            });
             alert('Cập nhật trạng thái thành công!');
             fetchOrderDetails(); // Refetch to update history
         } catch (err) {
             alert('Cập nhật thất bại. Vui lòng thử lại.');
+            console.error(err);
+        }
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!order) return;
+        try {
+            await httpClient.put(`/orders/${order.id}/confirm-payment`);
+            alert('Xác nhận thanh toán thành công!');
+            fetchOrderDetails(); // Refetch to update order data
+        } catch (err) {
+            alert('Xác nhận thanh toán thất bại. Vui lòng thử lại.');
             console.error(err);
         }
     };
@@ -217,6 +241,14 @@ const AdminOrderDetailPage: React.FC = () => {
                             <div className="flex justify-between"><span>Giảm giá:</span> <span>- 0 ₫</span></div>
                             <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Tổng cộng:</span> <span>{order.totalAmount.toLocaleString('vi-VN')} ₫</span></div>
                              <div className="flex items-center gap-2 pt-2"><CreditCard size={16} className="text-gray-500"/> <span>Thanh toán qua {order.paymentMethod}</span></div>
+                             {order.paymentMethod === 'QR' && order.paymentStatus !== 'PAID' && (
+                                 <button 
+                                     onClick={handleConfirmPayment}
+                                     className="w-full mt-3 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors"
+                                 >
+                                     Cập nhật đã thanh toán
+                                 </button>
+                             )}
                         </CardContent>
                     </Card>
                 </div>

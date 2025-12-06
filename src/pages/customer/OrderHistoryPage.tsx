@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Order, OrderItem } from '../../types/order';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -44,6 +44,7 @@ const OrderSkeleton: React.FC = () => (
 
 
 const OrderHistoryPage: React.FC = () => {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -53,9 +54,18 @@ const OrderHistoryPage: React.FC = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await axiosClient.get('/orders?sort=placedAt,desc');
-                setOrders(response.data);
-                setFilteredOrders(response.data); 
+                // Sử dụng endpoint mới từ backend: GET /orders/my-orders
+                const response = await axiosClient.get('/orders/my-orders', {
+                    params: {
+                        page: 0,
+                        size: 100,
+                        sort: 'placedAt,desc'
+                    }
+                });
+                // Backend trả về dạng Page, cần lấy content
+                const ordersData = Array.isArray(response.data) ? response.data : (response.data?.content || []);
+                setOrders(ordersData);
+                setFilteredOrders(ordersData); 
             } catch (err) {
                 console.error("Lỗi khi tải lịch sử đơn hàng:", err);
                 setError("Không thể tải lịch sử đơn hàng. Vui lòng thử lại.");
@@ -78,7 +88,6 @@ const OrderHistoryPage: React.FC = () => {
             setFilteredOrders(filtered);
         }
     }, [searchTerm, orders]);
-
 
     const renderContent = () => {
         if (isLoading) {
@@ -117,7 +126,7 @@ const OrderHistoryPage: React.FC = () => {
         return (
             <div className="space-y-6">
                 {filteredOrders.map((order) => (
-                    <div key={order.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition-shadow">
+                    <div key={order.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition-shadow relative">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 pb-4 border-b">
                             <div>
                                 <p className="font-bold text-lg text-gray-800">
@@ -156,14 +165,14 @@ const OrderHistoryPage: React.FC = () => {
                                 <p className="text-sm text-gray-500">Tổng tiền</p>
                                 <p className="font-bold text-xl text-indigo-600">{order.totalAmount.toLocaleString('vi-VN')} VND</p>
                             </div>
-                            <div className="mt-4 sm:mt-0">
-                                <Link 
-                                    to={`/account/orders/${order.id}`} 
-                                    className="inline-flex items-center bg-indigo-100 text-indigo-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-200 transition-colors"
+                            <div className="mt-4 sm:mt-0 relative z-10">
+                                <button
+                                    onClick={() => navigate(`/account/orders/${order.id}`)}
+                                    className="inline-flex items-center bg-indigo-100 text-indigo-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-200 transition-colors cursor-pointer relative z-10"
                                 >
                                     Xem chi tiết
                                     <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </div>

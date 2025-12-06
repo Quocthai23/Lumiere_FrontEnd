@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   ArrowUpRight,
@@ -9,6 +9,7 @@ import {
   Package2,
   Search,
   Users,
+  Loader2,
 } from "lucide-react"
 import {
   Bar,
@@ -22,53 +23,20 @@ import {
   YAxis,
   Legend
 } from "recharts"
-
-// --- Dữ liệu giả lập cho biểu đồ ---
-const revenueData = [
-  { month: "Thg 1", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 2", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 3", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 4", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 5", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 6", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 7", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 8", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 9", total: 95000000 },
-  { month: "Thg 10", total: 123000000 },
-  { month: "Thg 11", total: Math.floor(Math.random() * 50000000) + 10000000 },
-  { month: "Thg 12", total: Math.floor(Math.random() * 50000000) + 10000000 },
-]
-
-const subscriptionsData = [
-    { month: "Thg 1", count: Math.floor(Math.random() * 100) + 50 },
-    { month: "Thg 2", count: Math.floor(Math.random() * 100) + 50 },
-    { month: "Thg 3", count: Math.floor(Math.random() * 100) + 50 },
-    { month: "Thg 4", count: Math.floor(Math.random() * 100) + 50 },
-    { month: "Thg 5", count: 180 },
-    { month: "Thg 6", count: 210 },
-    { month: "Thg 7", count: 250 },
-    { month: "Thg 8", count: 230 },
-    { month: "Thg 9", count: 300 },
-    { month: "Thg 10", count: 350 },
-    { month: "Thg 11", count: Math.floor(Math.random() * 100) + 50 },
-    { month: "Thg 12", count: Math.floor(Math.random() * 100) + 50 },
-];
-
-const topProductsData = [
-    { name: "Áo Thun Basic", total: 450 },
-    { name: "Quần Jeans Slim", total: 380 },
-    { name: "Váy Hoa Mùa Hè", total: 290 },
-    { name: "Sơ Mi Oxford", total: 250 },
-    { name: "Áo Khoác Bomber", total: 180 },
-];
-
-const recentSalesData = [
-    { name: "Olivia Martin", email: "olivia.martin@email.com", amount: 1999000 },
-    { name: "Jackson Lee", email: "jackson.lee@email.com", amount: 390000 },
-    { name: "Isabella Nguyen", email: "isabella.nguyen@email.com", amount: 299000 },
-    { name: "William Kim", email: "will@email.com", amount: 99000 },
-    { name: "Sofia Davis", email: "sofia.davis@email.com", amount: 390000 },
-]
+import {
+  getDashboardStats,
+  getRevenueByMonth,
+  getNewCustomersByMonth,
+  getTopProducts,
+  getRecentSales,
+} from '../../api/dashboardApi';
+import type {
+  DashboardStatsDTO,
+  MonthlyRevenueDTO,
+  MonthlyCustomerDTO,
+  TopProductDTO,
+  RecentSaleDTO,
+} from '../../types/dashboard';
 
 // --- Các UI Component tái sử dụng ---
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
@@ -98,12 +66,113 @@ CardContent.displayName = "CardContent";
 
 // --- Component Dashboard Chính ---
 const DashboardPage: React.FC = () => {
-    const stats = {
-        totalRevenue: 123456789,
-        subscriptions: 2350,
-        sales: 12234,
-        activeNow: 573,
-    };
+    // States cho dữ liệu
+    const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
+    const [revenueData, setRevenueData] = useState<MonthlyRevenueDTO[]>([]);
+    const [subscriptionsData, setSubscriptionsData] = useState<MonthlyCustomerDTO[]>([]);
+    const [topProductsData, setTopProductsData] = useState<TopProductDTO[]>([]);
+    const [recentSalesData, setRecentSalesData] = useState<RecentSaleDTO[]>([]);
+    
+    // States cho loading
+    const [loadingStats, setLoadingStats] = useState(true);
+    const [loadingRevenue, setLoadingRevenue] = useState(true);
+    const [loadingCustomers, setLoadingCustomers] = useState(true);
+    const [loadingTopProducts, setLoadingTopProducts] = useState(true);
+    const [loadingRecentSales, setLoadingRecentSales] = useState(true);
+    
+    // States cho errors
+    const [error, setError] = useState<string | null>(null);
+
+    // Lazy load dữ liệu stats
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                setLoadingStats(true);
+                const data = await getDashboardStats();
+                setStats(data);
+            } catch (err) {
+                console.error('Lỗi khi tải thống kê:', err);
+                setError('Không thể tải thống kê');
+            } finally {
+                setLoadingStats(false);
+            }
+        };
+        loadStats();
+    }, []);
+
+    // Lazy load doanh thu theo tháng
+    useEffect(() => {
+        const loadRevenue = async () => {
+            try {
+                setLoadingRevenue(true);
+                const data = await getRevenueByMonth();
+                // Chuyển đổi format tháng nếu cần
+                const formattedData = data.map(item => ({
+                    month: item.month || `Thg ${data.indexOf(item) + 1}`,
+                    total: item.total,
+                }));
+                setRevenueData(formattedData);
+            } catch (err) {
+                console.error('Lỗi khi tải doanh thu:', err);
+            } finally {
+                setLoadingRevenue(false);
+            }
+        };
+        loadRevenue();
+    }, []);
+
+    // Lazy load khách hàng mới theo tháng
+    useEffect(() => {
+        const loadCustomers = async () => {
+            try {
+                setLoadingCustomers(true);
+                const data = await getNewCustomersByMonth();
+                // Chuyển đổi format tháng nếu cần
+                const formattedData = data.map(item => ({
+                    month: item.month || `Thg ${data.indexOf(item) + 1}`,
+                    count: item.count,
+                }));
+                setSubscriptionsData(formattedData);
+            } catch (err) {
+                console.error('Lỗi khi tải khách hàng:', err);
+            } finally {
+                setLoadingCustomers(false);
+            }
+        };
+        loadCustomers();
+    }, []);
+
+    // Lazy load top sản phẩm
+    useEffect(() => {
+        const loadTopProducts = async () => {
+            try {
+                setLoadingTopProducts(true);
+                const data = await getTopProducts(5);
+                setTopProductsData(data);
+            } catch (err) {
+                console.error('Lỗi khi tải top sản phẩm:', err);
+            } finally {
+                setLoadingTopProducts(false);
+            }
+        };
+        loadTopProducts();
+    }, []);
+
+    // Lazy load đơn hàng gần đây
+    useEffect(() => {
+        const loadRecentSales = async () => {
+            try {
+                setLoadingRecentSales(true);
+                const data = await getRecentSales(5);
+                setRecentSalesData(data);
+            } catch (err) {
+                console.error('Lỗi khi tải đơn hàng gần đây:', err);
+            } finally {
+                setLoadingRecentSales(false);
+            }
+        };
+        loadRecentSales();
+    }, []);
     
   return (
     // KHẮC PHỤC: Đã xóa class "-m-8" gây lỗi chồng chéo layout
@@ -116,8 +185,18 @@ const DashboardPage: React.FC = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('vi-VN')} ₫</div>
-            <p className="text-xs text-muted-foreground">+20.1% so với tháng trước</p>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {stats?.totalRevenue ? stats.totalRevenue.toLocaleString('vi-VN') : '0'} ₫
+                </div>
+                <p className="text-xs text-muted-foreground">+20.1% so với tháng trước</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -128,10 +207,20 @@ const DashboardPage: React.FC = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{stats.subscriptions.toLocaleString('vi-VN')}</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% so với tháng trước
-            </p>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  +{stats?.subscriptions ? stats.subscriptions.toLocaleString('vi-VN') : '0'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  +180.1% so với tháng trước
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -140,10 +229,20 @@ const DashboardPage: React.FC = () => {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{stats.sales.toLocaleString('vi-VN')}</div>
-            <p className="text-xs text-muted-foreground">
-              +19% so với tháng trước
-            </p>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  +{stats?.sales ? stats.sales.toLocaleString('vi-VN') : '0'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  +19% so với tháng trước
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -152,10 +251,20 @@ const DashboardPage: React.FC = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{stats.activeNow}</div>
-            <p className="text-xs text-muted-foreground">
-              +201 so với giờ trước
-            </p>
+            {loadingStats ? (
+              <div className="flex items-center justify-center h-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  +{stats?.activeNow || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  +201 so với giờ trước
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -167,14 +276,24 @@ const DashboardPage: React.FC = () => {
             <CardTitle>Tổng quan Doanh thu</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={revenueData}>
-                 <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${(value as number / 1000000)}tr`} />
-                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '0.5rem' }} formatter={(value) => [`${(value as number).toLocaleString('vi-VN')} ₫`, 'Doanh thu']} />
-                 <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary text-indigo-600" />
-              </BarChart>
-            </ResponsiveContainer>
+            {loadingRevenue ? (
+              <div className="flex items-center justify-center h-[350px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={revenueData}>
+                   <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${(value as number / 1000000)}tr`} />
+                   <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '0.5rem' }} formatter={(value) => [`${(value as number).toLocaleString('vi-VN')} ₫`, 'Doanh thu']} />
+                   <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary text-indigo-600" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+                Không có dữ liệu
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -184,14 +303,24 @@ const DashboardPage: React.FC = () => {
             <CardDescription>Tăng trưởng khách hàng trong năm.</CardDescription>
           </CardHeader>
           <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
+            {loadingCustomers ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : subscriptionsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={subscriptionsData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '0.5rem' }} formatter={(value) => [value, 'Khách hàng']} />
                     <Line type="monotone" dataKey="count" stroke="currentColor" strokeWidth={2} className="text-green-500" dot={{ r: 4, fill: "currentColor" }} activeDot={{ r: 6 }} />
                 </LineChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                Không có dữ liệu
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -203,14 +332,24 @@ const DashboardPage: React.FC = () => {
                 <CardDescription>Top 5 sản phẩm có doanh số cao nhất.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={topProductsData} layout="vertical">
-                        <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={120} />
-                        <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '0.5rem' }} formatter={(value) => [value, 'Số lượng']} />
-                        <Bar dataKey="total" fill="currentColor" radius={[0, 4, 4, 0]} className="fill-primary text-cyan-500" barSize={30} />
-                    </BarChart>
+              {loadingTopProducts ? (
+                <div className="flex items-center justify-center h-[350px]">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : topProductsData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={topProductsData} layout="vertical">
+                      <XAxis type="number" hide />
+                      <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={120} />
+                      <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '0.5rem' }} formatter={(value) => [value, 'Số lượng']} />
+                      <Bar dataKey="total" fill="currentColor" radius={[0, 4, 4, 0]} className="fill-primary text-cyan-500" barSize={30} />
+                  </BarChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+                  Không có dữ liệu
+                </div>
+              )}
             </CardContent>
         </Card>
         
@@ -225,15 +364,25 @@ const DashboardPage: React.FC = () => {
            
           </CardHeader>
           <CardContent className="grid gap-8">
-            {recentSalesData.map((sale, index) => (
-                 <div key={index} className="flex items-center gap-4">
-                    <div className="grid gap-1">
-                        <p className="text-sm font-medium leading-none">{sale.name}</p>
-                        <p className="text-sm text-muted-foreground">{sale.email}</p>
-                    </div>
-                    <div className="ml-auto font-medium">+{sale.amount.toLocaleString('vi-VN')} ₫</div>
+            {loadingRecentSales ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : recentSalesData.length > 0 ? (
+              recentSalesData.map((sale, index) => (
+                <div key={index} className="flex items-center gap-4">
+                  <div className="grid gap-1">
+                    <p className="text-sm font-medium leading-none">{sale.name}</p>
+                    <p className="text-sm text-muted-foreground">{sale.email}</p>
+                  </div>
+                  <div className="ml-auto font-medium">+{sale.amount.toLocaleString('vi-VN')} ₫</div>
                 </div>
-            ))}
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-32 text-muted-foreground">
+                Không có dữ liệu
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

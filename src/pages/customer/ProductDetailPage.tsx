@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { Product, ProductVariant } from '../../types/product';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
@@ -8,7 +8,7 @@ import ProductReviews from './ProductReviews';
 import ProductCarousel from '../../components/customer/ProductCarousel';
 import ProductQA from '../../components/customer/ProductQA';
 import StarRating from './StarRating';
-import { Heart, ShoppingCart, Info, MessageSquare, Star, X } from 'lucide-react';
+import { Heart, ShoppingCart, Info, MessageSquare, Star } from 'lucide-react';
 import Breadcrumb from '../../components/customer/Breadcrumb';
 import ProductImageGallery from '../../components/customer/ProductImageGallery';
 import SocialShareButtons from '../../components/customer/SocialShareButtons';
@@ -17,48 +17,8 @@ import httpClient from '../../utils/HttpClient.ts';
 import VariantOptionSelector from '../../components/customer/VariantOptionSelect.tsx';
 import HttpClient from "../../utils/HttpClient.ts";
 
-// --- Component Modal Xác Nhận ---
-interface ConfirmationModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    title: string;
-    message: string;
-}
-
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fadeIn">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    <X size={24} />
-                </button>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-                <p className="text-gray-600 mb-6">{message}</p>
-                <div className="flex justify-end space-x-3">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-medium transition-colors"
-                    >
-                        Hủy
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors"
-                    >
-                        Đồng ý
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const ProductDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
     const { addToCart } = useCart();
     const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const { addProductToHistory } = useRecentlyViewed();
@@ -72,7 +32,6 @@ const ProductDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [activeTab, setActiveTab] = useState('description');
-    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -156,20 +115,25 @@ const ProductDetailPage: React.FC = () => {
         }
     };
 
-    const handleWishlistClick = () => {
+    const handleWishlistClick = async () => {
         if (!product) return;
-        if (isInWishlist(product.id)) {
-            removeFromWishlist(product.id);
-        } else {
-            setIsWishlistModalOpen(true);
+        
+        // Dùng selectedVariant hoặc variant đầu tiên nếu chưa chọn
+        const variantToUse = selectedVariant || variants[0];
+        if (!variantToUse) {
+            console.warn('Không có variant để thêm vào wishlist');
+            return;
         }
-    };
-
-    const confirmAddToWishlist = () => {
-        if (product) {
-            addToWishlist(product.id);
-            setIsWishlistModalOpen(false);
-            navigate('/account/wishlist');
+        
+        const variantId = variantToUse.id;
+        if (isInWishlist(variantId)) {
+            await removeFromWishlist(variantId);
+            setNotification('Đã xóa khỏi danh sách yêu thích');
+            setTimeout(() => setNotification(''), 3000);
+        } else {
+            await addToWishlist(variantId, product, variantToUse);
+            setNotification('Đã thêm vào danh sách yêu thích');
+            setTimeout(() => setNotification(''), 3000);
         }
     };
 
@@ -289,12 +253,13 @@ const ProductDetailPage: React.FC = () => {
                         )}
                         <button
                             onClick={handleWishlistClick}
-                            className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                            title={isInWishlist(product.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                            className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={(selectedVariant || variants[0]) && isInWishlist((selectedVariant || variants[0])?.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                            disabled={variants.length === 0}
                         >
                             <Heart
                                 className={`w-6 h-6 ${
-                                    isInWishlist(product.id) ? 'text-red-500 fill-current' : 'text-gray-500'
+                                    (selectedVariant || variants[0]) && isInWishlist((selectedVariant || variants[0])?.id) ? 'text-red-500 fill-current' : 'text-gray-500'
                                 }`}
                             />
                         </button>
@@ -329,13 +294,6 @@ const ProductDetailPage: React.FC = () => {
 
             <ProductCarousel title="Có thể bạn cũng thích" products={relatedProducts} />
 
-            <ConfirmationModal
-                isOpen={isWishlistModalOpen}
-                onClose={() => setIsWishlistModalOpen(false)}
-                onConfirm={confirmAddToWishlist}
-                title="Thêm vào danh sách yêu thích"
-                message={`Bạn có chắc chắn muốn thêm "${product.name}" vào danh sách yêu thích không?`}
-            />
         </div>
     );
 };

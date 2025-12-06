@@ -20,7 +20,7 @@ const VariantOptionSelector: React.FC<VariantOptionSelectorProps> = ({
     const [loading, setLoading] = useState(true);
     const [variantSelectMap, setVariantSelectMap] = useState<Record<number, number[]>>({});
     const [selectedByGroup, setSelectedByGroup] = useState<Record<number, number | null>>({});
-    const initializedRef = useRef(false); // 👈 flag tránh reset state
+    const initializedRef = useRef(false);
 
     // 1) Fetch option groups theo product
     useEffect(() => {

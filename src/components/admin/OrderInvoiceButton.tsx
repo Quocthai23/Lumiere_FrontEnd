@@ -9,17 +9,31 @@ const OrderInvoiceButton: React.FC<Props> = ({ orderId }) => {
     async function downloadInvoice(orderId: number) {
         setDownloading(true);
         try {
-            // trả về { data: Blob, headers: Record<string,string> }
-            const res = await httpClient.get<Blob>(`/orders/${orderId}/invoice`, {
-                responseType: 'blob',
-            } as any);
-
-            const blob: Blob = (res instanceof Blob) ? res : new Blob([res], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            // Sử dụng endpoint mới từ backend: GET /orders/{id}/invoice
+            // Endpoint này trả về blob (Excel file), cần dùng fetch trực tiếp
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`http://localhost:8080/api/orders/${orderId}/invoice`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            
             // Lấy tên file từ header (nếu có)
+            const contentDisposition = response.headers.get('Content-Disposition');
             let filename = `invoice_${orderId}.xlsx`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
 
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

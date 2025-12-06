@@ -4,10 +4,11 @@ import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../contexts/CartContext';
 import { useComparison } from '../contexts/ComparisonContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import axiosClient from '../api/axiosClient';
 import type { Product } from '../types/product';
 import QuickViewModal from '../components/customer/QuickViewModal';
-import { Scale, Bell } from 'lucide-react';
+import { Scale, Bell, Heart } from 'lucide-react';
 import NotificationDropdown from '../components/customer/NotificationDropdown';
 import LiveChatWidget from '../components/customer/LiveChatWidget';
 
@@ -30,6 +31,7 @@ const CustomerLayout: React.FC = () => {
     const { cartCount } = useCart();
     const { compareCount } = useComparison();
     const { unreadCount } = useNotifications();
+    const { wishlistCount } = useWishlist();
     const navigate = useNavigate();
     
     const [searchQuery, setSearchQuery] = useState('');
@@ -149,6 +151,10 @@ const CustomerLayout: React.FC = () => {
                         <Link to="/compare" className="relative text-gray-600 hover:text-indigo-600">
                             <Scale className="h-6 w-6" />
                             {compareCount > 0 && <span className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{compareCount}</span>}
+                        </Link>
+                        <Link to="/account/wishlist" className="relative text-gray-600 hover:text-red-500 transition-colors">
+                            <Heart className="h-6 w-6" fill={wishlistCount > 0 ? 'currentColor' : 'none'} />
+                            {wishlistCount > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{wishlistCount}</span>}
                         </Link>
                         <Link to="/cart" className="relative text-gray-600 hover:text-indigo-600">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
