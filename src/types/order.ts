@@ -32,4 +32,5 @@ export interface Order {
   orderItems?: OrderItem[]; 
   paymentMethod?: string;
   orderStatusHistory?: OrderStatusHistory[];
+  canReview?: boolean;
 }

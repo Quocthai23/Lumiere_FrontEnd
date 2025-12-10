@@ -27,16 +27,47 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscriptionRef = useRef<string | null>(null);
+  const currentSessionIdRef = useRef<number | undefined>(undefined);
+  const currentContactMessageIdRef = useRef<number | undefined>(undefined);
+  const isConnectingRef = useRef<boolean>(false);
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // STOMP connection management
+  // STOMP connection management - chỉ connect một lần
   useEffect(() => {
-    if (isOpen && (contactMessageId || sessionId)) {
+    if (!isOpen || (!contactMessageId && !sessionId)) {
+      return;
+    }
+
+    // Nếu đã subscribe cho cùng sessionId/contactMessageId thì không làm gì
+    if (
+      currentSessionIdRef.current === sessionId &&
+      currentContactMessageIdRef.current === contactMessageId &&
+      subscriptionRef.current &&
+      stompClientService.getConnected()
+    ) {
+      return;
+    }
+
+    // Unsubscribe subscription cũ trước
+    if (subscriptionRef.current) {
+      stompClientService.unsubscribe(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+
+    // Cập nhật refs
+    currentSessionIdRef.current = sessionId;
+    currentContactMessageIdRef.current = contactMessageId;
+
+    // Chỉ connect nếu chưa connected
+    if (!stompClientService.getConnected() && !isConnectingRef.current) {
       connectStomp();
+    } else if (stompClientService.getConnected()) {
+      // Nếu đã connected, chỉ cần subscribe
+      subscribeToTopic();
     }
 
     return () => {
@@ -47,63 +78,30 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
     };
   }, [isOpen, contactMessageId, sessionId]);
 
-  const connectStomp = () => {
-    setIsConnecting(true);
+  const subscribeToTopic = () => {
+    // Chỉ subscribe khi đã connected
+    if (!stompClientService.getConnected()) {
+      console.warn('Cannot subscribe: STOMP client not connected');
+      return;
+    }
 
-    const onConnect = () => {
-      console.log('STOMP connected');
-      setIsConnected(true);
-      setIsConnecting(false);
-      
-      // Load chat history
-      loadChatHistory();
+    // Unsubscribe subscription cũ nếu có
+    if (subscriptionRef.current) {
+      stompClientService.unsubscribe(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
 
-      // Subscribe to session topic nếu có sessionId (ưu tiên)
-      if (sessionId) {
-        const subId = stompClientService.subscribeToSession(
-          sessionId,
-          (message: ChatMessage) => {
-            setMessages(prev => {
-              // Avoid duplicates
-              if (prev.some(m => m.id === message.id)) {
-                return prev;
-              }
-              return [...prev, {
-                id: message.id || Date.now(),
-                sender: message.sender,
-                message: message.message,
-                timestamp: message.timestamp,
-                contactMessageId: message.contactMessageId,
-              }];
-            });
-          }
-        );
-        subscriptionRef.current = subId;
-      } else if (contactMessageId) {
-        // Subscribe to contact message topic nếu không có sessionId
-        const subId = stompClientService.subscribeToContactMessage(
-          contactMessageId,
-          (message: ChatMessage) => {
-            setMessages(prev => {
-              // Avoid duplicates
-              if (prev.some(m => m.id === message.id)) {
-                return prev;
-              }
-              return [...prev, {
-                id: message.id || Date.now(),
-                sender: message.sender,
-                message: message.message,
-                timestamp: message.timestamp,
-                contactMessageId: message.contactMessageId,
-              }];
-            });
-          }
-        );
-        subscriptionRef.current = subId;
-      } else {
-        // Subscribe to public topic if no contactMessageId or sessionId
-        const subId = stompClientService.subscribeToPublic((message: ChatMessage) => {
+    // Sử dụng giá trị từ refs để đảm bảo luôn dùng giá trị mới nhất
+    const currentSessionId = currentSessionIdRef.current;
+    const currentContactMessageId = currentContactMessageIdRef.current;
+
+    // Subscribe to session topic nếu có sessionId (ưu tiên)
+    if (currentSessionId) {
+      const subId = stompClientService.subscribeToSession(
+        currentSessionId,
+        (message: ChatMessage) => {
           setMessages(prev => {
+            // Avoid duplicates
             if (prev.some(m => m.id === message.id)) {
               return prev;
             }
@@ -115,15 +113,82 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
               contactMessageId: message.contactMessageId,
             }];
           });
-        });
+        }
+      );
+      if (subId) {
         subscriptionRef.current = subId;
       }
+    } else if (currentContactMessageId) {
+      // Subscribe to contact message topic nếu không có sessionId
+      const subId = stompClientService.subscribeToContactMessage(
+        currentContactMessageId,
+        (message: ChatMessage) => {
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === message.id)) {
+              return prev;
+            }
+            return [...prev, {
+              id: message.id || Date.now(),
+              sender: message.sender,
+              message: message.message,
+              timestamp: message.timestamp,
+              contactMessageId: message.contactMessageId,
+            }];
+          });
+        }
+      );
+      if (subId) {
+        subscriptionRef.current = subId;
+      }
+    } else {
+      // Subscribe to public topic if no contactMessageId or sessionId
+      const subId = stompClientService.subscribeToPublic((message: ChatMessage) => {
+        setMessages(prev => {
+          if (prev.some(m => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, {
+            id: message.id || Date.now(),
+            sender: message.sender,
+            message: message.message,
+            timestamp: message.timestamp,
+            contactMessageId: message.contactMessageId,
+          }];
+        });
+      });
+      if (subId) {
+        subscriptionRef.current = subId;
+      }
+    }
+  };
+
+  const connectStomp = () => {
+    if (isConnectingRef.current) {
+      return; // Đang connect rồi thì không connect lại
+    }
+
+    isConnectingRef.current = true;
+    setIsConnecting(true);
+
+    const onConnect = () => {
+      console.log('STOMP connected');
+      setIsConnected(true);
+      setIsConnecting(false);
+      isConnectingRef.current = false;
+      
+      // Load chat history
+      loadChatHistory();
+
+      // Subscribe sau khi connected
+      subscribeToTopic();
     };
 
     const onError = (error: any) => {
       console.error('STOMP connection error:', error);
       setIsConnecting(false);
       setIsConnected(false);
+      isConnectingRef.current = false;
     };
 
     stompClientService.connect(onConnect, onError);

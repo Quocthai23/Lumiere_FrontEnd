@@ -65,13 +65,9 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
                     <NavItem to="/admin/orders" icon={ShoppingCart}>Đơn hàng</NavItem>
                     <NavItem to="/admin/customers" icon={Users}>Khách hàng</NavItem>
                     <NavItem to="/admin/reviews" icon={Star}>Đánh giá</NavItem>
-                    <NavItem to="/admin/qa" icon={MessageSquare}>Hỏi & Đáp</NavItem>
                     <NavItem to="/admin/contacts" icon={MessageSquare}>Tin nhắn liên hệ</NavItem>
                     <NavItem to="/admin/collections" icon={LayoutGrid}>Bộ sưu tập</NavItem>
-                    <NavItem to="/admin/warehouses" icon={Factory}>Nhà cung cấp</NavItem>
-                    <NavItem to="/admin/inventory" icon={PackageSearch}>Tồn kho</NavItem>
                     <NavItem to="/admin/vouchers" icon={Ticket}>Khuyến mãi</NavItem>
-                    <NavItem to="/admin/reports" icon={LineChart}>Báo cáo</NavItem>
                     <NavItem to="/admin/notifications" icon={Bell}>Thông báo</NavItem>
                 </nav>
             </div>

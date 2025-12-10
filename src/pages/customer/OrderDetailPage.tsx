@@ -4,7 +4,6 @@ import type { Order, OrderItem } from '../../types/order';
 import axiosClient from '../../api/axiosClient';
 import OrderStatusTracker from '../../components/customer/OrderStatusTracker';
 import ReviewModal from '../../components/customer/ReviewModal';
-import type { ProductVariant } from '../../types/product';
 import { QrCode } from 'lucide-react';
 
 const OrderDetailPage: React.FC = () => {
@@ -13,7 +12,7 @@ const OrderDetailPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
-    const [selectedProductVariant, setSelectedProductVariant] = useState<ProductVariant | null>(null);
+    const [selectedOrderItem, setSelectedOrderItem] = useState<OrderItem | null>(null);
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -56,14 +55,25 @@ const OrderDetailPage: React.FC = () => {
     // Kiểm tra xem order có status là finish (COMPLETED hoặc DELIVERED)
     const isOrderFinished = order.status === 'COMPLETED' || order.status === 'DELIVERED';
 
-    const handleOpenReviewModal = (productVariant: ProductVariant) => {
-        setSelectedProductVariant(productVariant);
+    const handleOpenReviewModal = (orderItem: OrderItem) => {
+        setSelectedOrderItem(orderItem);
         setReviewModalOpen(true);
     };
 
     const handleCloseReviewModal = () => {
         setReviewModalOpen(false);
-        setSelectedProductVariant(null);
+        setSelectedOrderItem(null);
+    };
+
+    const handleReviewSubmitted = () => {
+        // Refresh order data sau khi submit review
+        if (orderId) {
+            axiosClient.get<Order>(`/orders/${orderId}`).then(response => {
+                setOrder(response.data);
+            }).catch(err => {
+                console.error('Lỗi khi tải lại đơn hàng:', err);
+            });
+        }
     };
 
     // Generate QR code URL nếu paymentMethod là QR
@@ -81,7 +91,22 @@ const OrderDetailPage: React.FC = () => {
 
     return (
         <div>
-            <Link to="/account/orders" className="text-indigo-600 hover:underline mb-6 inline-block">&larr; Quay lại danh sách</Link>
+            <div className="flex justify-between items-center mb-6">
+                <Link to="/account/orders" className="text-indigo-600 hover:underline">&larr; Quay lại danh sách</Link>
+                {isOrderFinished && order.canReview && (
+                    <button
+                        onClick={() => {
+                            // Mở modal với orderItem đầu tiên hoặc tất cả orderItems
+                            if (order.orderItems && order.orderItems.length > 0) {
+                                handleOpenReviewModal(order.orderItems[0]);
+                            }
+                        }}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                    >
+                        Đánh giá đơn hàng
+                    </button>
+                )}
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                     <div>
@@ -104,14 +129,6 @@ const OrderDetailPage: React.FC = () => {
                                         <p className="font-bold text-gray-800">{item.productVariant?.name}</p>
                                         <p className="text-sm text-gray-500">SKU: {item.productVariant?.sku}</p>
                                         <p className="text-sm">Số lượng: {item.quantity}</p>
-                                        {isOrderFinished && item.productVariant && (
-                                            <button
-                                                onClick={() => handleOpenReviewModal(item.productVariant!)}
-                                                className="mt-2 px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                                            >
-                                                Thêm đánh giá
-                                            </button>
-                                        )}
                                     </div>
                                     <p className="font-semibold text-gray-900">{(item.unitPrice * item.quantity).toLocaleString('vi-VN')} VND</p>
                                 </div>
@@ -163,7 +180,10 @@ const OrderDetailPage: React.FC = () => {
             <ReviewModal
                 isOpen={reviewModalOpen}
                 onClose={handleCloseReviewModal}
-                productVariant={selectedProductVariant}
+                orderId={orderId ? Number(orderId) : null}
+                orderItemId={selectedOrderItem?.id || null}
+                productVariant={selectedOrderItem?.productVariant || null}
+                onReviewSubmitted={handleReviewSubmitted}
             />
         </div>
     );

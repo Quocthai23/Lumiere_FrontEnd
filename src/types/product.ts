@@ -3,7 +3,7 @@ import type {AttachmentDTO} from "./types.ts";
 export interface Review {
   id: number;
   productId: number;
-  rating: number;
+  rating: number | string; // Có thể là number hoặc enum string (ONE, TWO, THREE, FOUR, FIVE)
   author: string;
   comment: string;
   createdAt: string;

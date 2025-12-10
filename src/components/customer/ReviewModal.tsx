@@ -5,6 +5,8 @@ import type { ProductVariant } from '../../types/product';
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  orderId: number | null;
+  orderItemId: number | null;
   productVariant: ProductVariant | null;
   onReviewSubmitted?: () => void;
 }
@@ -12,51 +14,66 @@ interface ReviewModalProps {
 const ReviewModal: React.FC<ReviewModalProps> = ({ 
   isOpen, 
   onClose, 
+  orderId,
+  orderItemId,
   productVariant,
   onReviewSubmitted 
 }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
-  const [author, setAuthor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Convert số rating (1-5) thành enum string (ONE, TWO, THREE, FOUR, FIVE)
+  const convertRatingToEnum = (ratingNumber: number): string => {
+    const ratingMap: { [key: number]: string } = {
+      1: 'ONE',
+      2: 'TWO',
+      3: 'THREE',
+      4: 'FOUR',
+      5: 'FIVE',
+    };
+    return ratingMap[ratingNumber] || 'FIVE';
+  };
 
   useEffect(() => {
     if (!isOpen) {
       // Reset form when modal closes
       setRating(5);
       setComment('');
-      setAuthor('');
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!productVariant?.productId) {
-      alert('Không tìm thấy thông tin sản phẩm.');
+
+    if (!orderId || !orderItemId) {
+      alert('Không tìm thấy thông tin đơn hàng.');
       return;
     }
 
-    if (!comment.trim() || !author.trim()) {
-      alert('Vui lòng nhập tên và nội dung đánh giá.');
+    if (!comment.trim()) {
+      alert('Vui lòng nhập nội dung đánh giá.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await axiosClient.post('/reviews', {
-        productId: productVariant.productId,
-        author: author,
-        rating: rating,
-        comment: comment,
-      });
+      // Gửi request đến /orders/{orderId}/reviews với format CreateOrderReviewDTO
+      await axiosClient.post(`/orders/${orderId}/reviews`, [
+        {
+          orderItemId: orderItemId,
+          rating: convertRatingToEnum(rating), // Convert sang enum: ONE, TWO, THREE, FOUR, FIVE
+          comment: comment || undefined,
+        }
+      ]);
       
       alert('Đánh giá đã được gửi thành công!');
       onReviewSubmitted?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Lỗi khi gửi đánh giá:', err);
-      alert('Gửi đánh giá thất bại. Vui lòng thử lại.');
+      const errorMessage = err.response?.data?.message || 'Gửi đánh giá thất bại. Vui lòng thử lại.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,21 +141,6 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
               </div>
             </div>
 
-            <div className="mb-4">
-              <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-2">
-                Tên của bạn:
-              </label>
-              <input
-                id="author"
-                type="text"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Nhập tên của bạn"
-                required
-              />
-            </div>
-
             <div className="mb-6">
               <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
                 Nội dung đánh giá:
@@ -150,7 +152,6 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
                 rows={4}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Viết đánh giá của bạn ở đây..."
-                required
               />
             </div>
 

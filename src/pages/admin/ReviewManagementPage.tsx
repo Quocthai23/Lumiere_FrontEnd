@@ -3,6 +3,7 @@ import type { Review } from '../../types/product';
 import { Star, Check, Trash2, CornerDownRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import httpClient from "../../utils/HttpClient.ts";
+import { productAnswerApi } from '../../api/productAnswerApi';
 
 // Định nghĩa kiểu dữ liệu Review mở rộng
 interface ReviewWithProduct extends Review {
@@ -12,16 +13,37 @@ interface ReviewWithProduct extends Review {
         slug: string;
     };
     replyText?: string; // Thêm trường phản hồi
-    status?: 'PENDING' | 'APPROVED'; // Thêm trạng thái
+    productAnswerId?: number; // ID của câu trả lời để có thể update
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED'; // Thêm trạng thái
 }
 
-const StarRating = ({ rating }: { rating: number }) => (
-    <div className="flex">
-        {[...Array(5)].map((_, i) => (
-            <Star key={i} className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-        ))}
-    </div>
-);
+// Hàm chuyển đổi rating enum string sang số
+const convertRatingToNumber = (rating: number | string): number => {
+    if (typeof rating === 'number') {
+        return rating;
+    }
+    
+    const ratingMap: Record<string, number> = {
+        'ONE': 1,
+        'TWO': 2,
+        'THREE': 3,
+        'FOUR': 4,
+        'FIVE': 5
+    };
+    
+    return ratingMap[rating.toUpperCase()] || 0;
+};
+
+const StarRating = ({ rating }: { rating: number | string }) => {
+    const numericRating = convertRatingToNumber(rating);
+    return (
+        <div className="flex">
+            {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-4 w-4 ${i < numericRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+            ))}
+        </div>
+    );
+};
 
 const ReviewManagementPage: React.FC = () => {
     const [reviews, setReviews] = useState<ReviewWithProduct[]>([]);
@@ -30,17 +52,34 @@ const ReviewManagementPage: React.FC = () => {
     const [filter, setFilter] = useState('ALL'); // ALL, PENDING, APPROVED
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [replyText, setReplyText] = useState('');
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
     const fetchReviews = async () => {
         setIsLoading(true);
         try {
             const response = await httpClient.get<ReviewWithProduct[]>('/product-reviews?_expand=product');
-            const reviewsWithStatus = (response || []).map((review: ReviewWithProduct, index: number) => ({
-                ...review,
-                status: index % 3 === 0 ? 'PENDING' : 'APPROVED',
-                replyText: index % 4 === 0 ? 'Cảm ơn bạn đã đánh giá sản phẩm này!' : undefined
-            }));
-            setReviews(reviewsWithStatus);
+            
+            // Fetch product answers để lấy replyText cho reviews
+            let productAnswers: any[] = [];
+            try {
+                productAnswers = await productAnswerApi.getAllProductAnswers();
+            } catch (err) {
+                console.warn('Không thể tải danh sách câu trả lời:', err);
+            }
+            
+            // Map product answers vào reviews
+            const reviewsWithAnswers = (response || []).map((review: ReviewWithProduct) => {
+                // Tìm product answer tương ứng với review này
+                const answer = productAnswers.find(a => a.productReviewId === review.id);
+                
+                return {
+                    ...review,
+                    replyText: answer?.answerText,
+                    productAnswerId: answer?.id
+                };
+            });
+            
+            setReviews(reviewsWithAnswers);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách đánh giá.');
@@ -59,22 +98,85 @@ const ReviewManagementPage: React.FC = () => {
         return review.status === filter;
     });
 
-    const handleApprove = (id: number) => {
-        setReviews(reviews.map(r => r.id === id ? { ...r, status: 'APPROVED' } : r));
+    const handleApprove = async (id: number) => {
+        try {
+            const currentReview = reviews.find(r => r.id === id);
+            if (!currentReview) return;
+            
+            // Gọi API PUT để cập nhật status
+            const updatedReview = await httpClient.put<ReviewWithProduct>(
+                `/product-reviews/${id}`,
+                {
+                    ...currentReview,
+                    status: 'APPROVED'
+                }
+            );
+            
+            // Cập nhật state với review đã được duyệt từ server
+            setReviews(reviews.map(r => r.id === id ? updatedReview : r));
+        } catch (err) {
+            console.error('Lỗi khi duyệt đánh giá:', err);
+            alert('Không thể duyệt đánh giá. Vui lòng thử lại.');
+        }
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+    const handleDelete = async (id: number) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+            return;
+        }
+        
+        try {
+            // Gọi API DELETE để xóa review
+            await httpClient.delete(`/product-reviews/${id}`);
+            
+            // Cập nhật state sau khi xóa thành công
             setReviews(reviews.filter(r => r.id !== id));
+        } catch (err) {
+            console.error('Lỗi khi xóa đánh giá:', err);
+            alert('Không thể xóa đánh giá. Vui lòng thử lại.');
         }
     };
     
-    const handleReplySubmit = (reviewId: number) => {
+    const handleReplySubmit = async (reviewId: number) => {
         if (!replyText.trim()) return;
-        // Mock logic
-        setReviews(reviews.map(r => r.id === reviewId ? { ...r, replyText: replyText } : r));
-        setReplyingTo(null);
-        setReplyText('');
+        
+        setIsSubmittingReply(true);
+        try {
+            const currentReview = reviews.find(r => r.id === reviewId);
+            
+            if (currentReview?.productAnswerId) {
+                // Update existing answer
+                const updatedAnswer = await productAnswerApi.updateProductAnswer(
+                    currentReview.id,
+                    { answerText: replyText }
+                );
+                setReviews(reviews.map(r => 
+                    r.id === reviewId 
+                        ? { ...r, replyText: updatedAnswer.answerText, productAnswerId: updatedAnswer.id } 
+                        : r
+                ));
+            } else {
+                // Create new answer
+                const newAnswer = await productAnswerApi.createProductAnswer({
+                    questionId: reviewId,
+                    answerText: replyText,
+                    author: 'Lumiere Store'
+                });
+                setReviews(reviews.map(r => 
+                    r.id === reviewId 
+                        ? { ...r, replyText: newAnswer.answerText, productAnswerId: newAnswer.id } 
+                        : r
+                ));
+            }
+            
+            setReplyingTo(null);
+            setReplyText('');
+        } catch (err) {
+            console.error('Lỗi khi gửi câu trả lời:', err);
+            alert('Không thể gửi câu trả lời. Vui lòng thử lại.');
+        } finally {
+            setIsSubmittingReply(false);
+        }
     };
     
     const startReplying = (reviewId: number) => {
@@ -89,7 +191,7 @@ const ReviewManagementPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Quản lý Đánh giá</h1>
                 <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                    {['ALL', 'PENDING', 'APPROVED'].map(status => (
+                    {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
@@ -97,7 +199,7 @@ const ReviewManagementPage: React.FC = () => {
                                 filter === status ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:bg-gray-200'
                             }`}
                         >
-                            {status === 'ALL' ? 'Tất cả' : (status === 'PENDING' ? 'Chờ duyệt' : 'Đã duyệt')}
+                            {status === 'ALL' ? 'Tất cả' : (status === 'PENDING' ? 'Chờ duyệt' : (status === 'APPROVED' ? 'Đã duyệt' : 'Từ chối'))}
                         </button>
                     ))}
                 </div>
@@ -156,8 +258,23 @@ const ReviewManagementPage: React.FC = () => {
                                             className="w-full p-2 border rounded-md mb-2 text-sm"
                                         />
                                         <div className="flex gap-2">
-                                            <button onClick={() => handleReplySubmit(review.id)} className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Lưu</button>
-                                            <button onClick={() => setReplyingTo(null)} className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Hủy</button>
+                                            <button 
+                                                onClick={() => handleReplySubmit(review.id)} 
+                                                disabled={isSubmittingReply}
+                                                className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isSubmittingReply ? 'Đang lưu...' : 'Lưu'}
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setReplyingTo(null);
+                                                    setReplyText('');
+                                                }} 
+                                                disabled={isSubmittingReply}
+                                                className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Hủy
+                                            </button>
                                         </div>
                                     </div>
                                 ) : (

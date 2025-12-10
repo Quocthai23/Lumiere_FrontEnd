@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { contactApi } from '../../api/contactApi';
+import { chatApi } from '../../api/chatApi';
 import WebSocketChat from '../../components/customer/WebSocketChat';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -52,11 +53,24 @@ const ContactPage: React.FC = () => {
       
       setSubmittedContactId(result.id);
       
-      // Lưu sessionId nếu có trong response
-      if (result.sessionId) {
-        setSessionId(result.sessionId);
-        // Lưu vào localStorage để giữ lại khi refresh
-        localStorage.setItem('contactSessionId', result.sessionId.toString());
+      // Lấy ID từ response (ưu tiên sessionId, nếu không có thì dùng id)
+      const sessionIdToUse = result.sessionId || result.id;
+      
+      if (sessionIdToUse) {
+        // Gọi API /chat/session/{id} với ID từ response
+        try {
+          await chatApi.getChatSession(sessionIdToUse);
+          setSessionId(sessionIdToUse);
+          // Lưu vào localStorage để giữ lại khi refresh
+          localStorage.setItem('contactSessionId', sessionIdToUse.toString());
+        } catch (chatError) {
+          console.error('Error fetching chat session:', chatError);
+          // Vẫn tiếp tục với sessionId nếu có, không block flow
+          if (result.sessionId) {
+            setSessionId(result.sessionId);
+            localStorage.setItem('contactSessionId', result.sessionId.toString());
+          }
+        }
       }
       
       setCustomerInfo({ email: formData.email, fullName: formData.fullName });
