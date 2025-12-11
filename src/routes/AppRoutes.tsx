@@ -26,6 +26,7 @@ import AddressPage from '../pages/customer/AddressPage';
 import ComparisonPage from '../pages/customer/ComparisonPage';
 import LoyaltyPage from '../pages/customer/LoyaltyPage';
 import NotificationsPage from '../pages/customer/NotificationsPage';
+import CustomerVoucherPage from '../pages/customer/CustomerVoucherPage';
 
 // Admin Pages
 import DashboardPage from '../pages/admin/DashboardPage';
@@ -46,6 +47,7 @@ import QAManagementPage from '../pages/admin/QAManagementPage';
 import CollectionManagementPage from '../pages/admin/CollectionManagementPage'; // Import trang mới
 import AdminCollectionEditPage from '../pages/admin/AdminCollectionEditPage'; // Import trang mới
 import ContactManagementPage from '../pages/admin/ContactManagementPage';
+import AdminFlashSalePage from '../pages/admin/AdminFlashSalePage';
 
 
 // Auth Pages
@@ -76,6 +78,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="contact" element={<ContactPage />} />
                     <Route path="search" element={<SearchResultsPage />} />
                     <Route path="compare" element={<ComparisonPage />} />
+                    <Route path="vouchers" element={<CustomerVoucherPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="order-confirmation" element={<OrderConfirmationPage />} />
                 </Route>
@@ -124,6 +127,7 @@ const AppRoutes: React.FC = () => {
                         <Route path="collections" element={<CollectionManagementPage />} /> {/* Thêm route mới */}
                         <Route path="collections/new" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}
                         <Route path="collections/edit/:collectionId" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}
+                        <Route path="flash-sales" element={<AdminFlashSalePage />} />
                     </Route>
                 </Route>
 

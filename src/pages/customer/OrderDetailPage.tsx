@@ -4,6 +4,7 @@ import type { Order, OrderItem } from '../../types/order';
 import axiosClient from '../../api/axiosClient';
 import OrderStatusTracker from '../../components/customer/OrderStatusTracker';
 import ReviewModal from '../../components/customer/ReviewModal';
+import CancelOrderModal from '../../components/customer/CancelOrderModal';
 import { QrCode } from 'lucide-react';
 
 const OrderDetailPage: React.FC = () => {
@@ -13,6 +14,8 @@ const OrderDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [selectedOrderItem, setSelectedOrderItem] = useState<OrderItem | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -54,6 +57,8 @@ const OrderDetailPage: React.FC = () => {
 
     // Kiểm tra xem order có status là finish (COMPLETED hoặc DELIVERED)
     const isOrderFinished = order.status === 'COMPLETED' || order.status === 'DELIVERED';
+    // Kiểm tra xem có thể hủy đơn hàng không (chưa giao và chưa hoàn thành)
+    const canCancel = order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && order.status !== 'COMPLETED';
 
     const handleOpenReviewModal = (orderItem: OrderItem) => {
         setSelectedOrderItem(orderItem);
@@ -76,6 +81,33 @@ const OrderDetailPage: React.FC = () => {
         }
     };
 
+    const handleOpenCancelModal = () => {
+        setCancelModalOpen(true);
+    };
+
+    const handleCloseCancelModal = () => {
+        setCancelModalOpen(false);
+    };
+
+    const handleCancelOrder = async (reason: string) => {
+        if (!orderId || !order) return;
+
+        setIsCancelling(true);
+        try {
+            await axiosClient.put(`/orders/${orderId}/cancel`, { reason });
+            alert('Đơn hàng đã được hủy thành công!');
+            setCancelModalOpen(false);
+            // Refresh order data
+            const response = await axiosClient.get<Order>(`/orders/${orderId}`);
+            setOrder(response.data);
+        } catch (err) {
+            console.error('Lỗi khi hủy đơn hàng:', err);
+            alert('Không thể hủy đơn hàng. Vui lòng thử lại.');
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
     // Generate QR code URL nếu paymentMethod là QR
     const generateQRCodeUrl = (): string | null => {
         if (order.paymentMethod === 'QR') {
@@ -93,19 +125,30 @@ const OrderDetailPage: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <Link to="/account/orders" className="text-indigo-600 hover:underline">&larr; Quay lại danh sách</Link>
-                {isOrderFinished && order.canReview && (
-                    <button
-                        onClick={() => {
-                            // Mở modal với orderItem đầu tiên hoặc tất cả orderItems
-                            if (order.orderItems && order.orderItems.length > 0) {
-                                handleOpenReviewModal(order.orderItems[0]);
-                            }
-                        }}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                    >
-                        Đánh giá đơn hàng
-                    </button>
-                )}
+                <div className="flex gap-2">
+                    {canCancel && (
+                        <button
+                            onClick={handleOpenCancelModal}
+                            disabled={isCancelling}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400"
+                        >
+                            Hủy đơn hàng
+                        </button>
+                    )}
+                    {isOrderFinished && order.canReview && (
+                        <button
+                            onClick={() => {
+                                // Mở modal với orderItem đầu tiên hoặc tất cả orderItems
+                                if (order.orderItems && order.orderItems.length > 0) {
+                                    handleOpenReviewModal(order.orderItems[0]);
+                                }
+                            }}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                        >
+                            Đánh giá đơn hàng
+                        </button>
+                    )}
+                </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
@@ -114,10 +157,35 @@ const OrderDetailPage: React.FC = () => {
                         <div className="bg-white p-4 rounded-lg shadow-sm border space-y-2">
                             <p><strong>Ngày đặt:</strong> {new Date(order.placedAt).toLocaleString('vi-VN')}</p>
                             <p><strong>Tổng tiền:</strong> <span className="font-bold text-indigo-600">{order.totalAmount.toLocaleString('vi-VN')} VND</span></p>
+                            {order.shippingCost !== undefined && order.shippingCost !== null && (
+                                <p><strong>Phí vận chuyển:</strong> {order.shippingCost === 0 ? <span className="text-green-600">Miễn phí</span> : <span>{order.shippingCost.toLocaleString('vi-VN')} VND</span>}</p>
+                            )}
                             <p><strong>Phương thức thanh toán:</strong> {order.paymentMethod === 'QR' ? 'VNPay QR' : order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : order.paymentMethod}</p>
                             <p className="pt-2"><strong>Ghi chú giao hàng:</strong> {order.note || 'Không có'}</p>
                         </div>
                     </div>
+
+                    {order.shippingInfo && (() => {
+                        try {
+                            const shippingData = JSON.parse(order.shippingInfo);
+                            return (
+                                <div>
+                                    <h3 className="text-xl font-semibold mb-4">Thông tin giao hàng</h3>
+                                    <div className="bg-white p-4 rounded-lg shadow-sm border space-y-2">
+                                        <p><strong>Họ tên người nhận:</strong> {shippingData.fullName || 'N/A'}</p>
+                                        <p><strong>Số điện thoại:</strong> {shippingData.phone || 'N/A'}</p>
+                                        <p><strong>Địa chỉ:</strong> {shippingData.street || 'N/A'}</p>
+                                        <p><strong>Thành phố/Tỉnh:</strong> {shippingData.city || 'N/A'}</p>
+                                        {shippingData.note && (
+                                            <p><strong>Ghi chú:</strong> {shippingData.note}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        } catch (e) {
+                            return null;
+                        }
+                    })()}
 
                     <div>
                         <h3 className="text-xl font-semibold mb-4">Các sản phẩm đã mua</h3>
@@ -185,6 +253,16 @@ const OrderDetailPage: React.FC = () => {
                 productVariant={selectedOrderItem?.productVariant || null}
                 onReviewSubmitted={handleReviewSubmitted}
             />
+
+            {order && (
+                <CancelOrderModal
+                    isOpen={cancelModalOpen}
+                    onClose={handleCloseCancelModal}
+                    onConfirm={handleCancelOrder}
+                    orderCode={order.code}
+                    isCancelling={isCancelling}
+                />
+            )}
         </div>
     );
 };

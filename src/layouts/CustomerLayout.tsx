@@ -104,17 +104,18 @@ const CustomerLayout: React.FC = () => {
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col font-sans">
             <header className="bg-white/95 backdrop-blur-sm shadow-md sticky top-0 z-50">
-                <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-                    <Link to="/" className="text-3xl font-bold text-indigo-600 tracking-wider">LUMIERE</Link>
+                <nav className="container mx-auto px-6 md:px-8 lg:px-12 py-5 md:py-6 flex justify-between items-center gap-4 md:gap-6 lg:gap-8">
+                    <Link to="/" className="text-3xl font-bold text-indigo-600 tracking-wider mr-4 md:mr-8 lg:mr-12 flex-shrink-0">LUMIERE</Link>
 
-                    <div className="hidden md:flex items-center space-x-8">
-                        <NavLink to="/products" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Sản phẩm</NavLink>
-                        <NavLink to="/collections" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Bộ sưu tập</NavLink>
-                        <NavLink to="/about" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Về chúng tôi</NavLink>
-                        <NavLink to="/contact" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300">Liên hệ</NavLink>
+                    <div className="hidden md:flex items-center space-x-6 lg:space-x-8 xl:space-x-10">
+                        <NavLink to="/products" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 whitespace-nowrap">Sản phẩm</NavLink>
+                        <NavLink to="/collections" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 whitespace-nowrap">Bộ sưu tập</NavLink>
+                        <NavLink to="/vouchers" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 whitespace-nowrap">Mã Giảm Giá</NavLink>
+                        <NavLink to="/about" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 whitespace-nowrap">Về chúng tôi</NavLink>
+                        <NavLink to="/contact" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="text-gray-600 hover:text-indigo-600 transition-colors duration-300 whitespace-nowrap">Liên hệ</NavLink>
                     </div>
 
-                    <div ref={searchRef} className="relative w-full max-w-xs md:max-w-sm">
+                    <div ref={searchRef} className="relative w-full max-w-xs md:max-w-sm lg:max-w-md mx-2 md:mx-4">
                         <form onSubmit={handleSearchSubmit}>
                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
                             <input
@@ -147,7 +148,7 @@ const CustomerLayout: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 md:space-x-5 lg:space-x-6 flex-shrink-0">
                         <Link to="/compare" className="relative text-gray-600 hover:text-indigo-600">
                             <Scale className="h-6 w-6" />
                             {compareCount > 0 && <span className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{compareCount}</span>}
@@ -171,13 +172,13 @@ const CustomerLayout: React.FC = () => {
                         )}
                         {isAuthenticated() ? (
                             <>
-                                <NavLink to="/account/profile" className="text-gray-600 hover:text-indigo-600 font-semibold">Tài khoản</NavLink>
-                                <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 text-sm font-semibold">Đăng xuất</button>
+                                <NavLink to="/account/profile" className="text-gray-600 hover:text-indigo-600 font-semibold whitespace-nowrap ml-2">Tài khoản</NavLink>
+                                <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 text-sm font-semibold whitespace-nowrap">Đăng xuất</button>
                             </>
                         ) : (
                             <>
-                                <Link to="/login" className="text-gray-600 hover:text-indigo-600 font-semibold">Đăng nhập</Link>
-                                <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-semibold">Đăng ký</Link>
+                                <Link to="/login" className="text-gray-600 hover:text-indigo-600 font-semibold whitespace-nowrap ml-2">Đăng nhập</Link>
+                                <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-semibold whitespace-nowrap">Đăng ký</Link>
                             </>
                         )}
                     </div>

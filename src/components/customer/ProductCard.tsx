@@ -20,20 +20,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const variants = product?.variants || [];
     
     if (variants.length > 0) {
-      // Lấy giá từ variants
+      // Lấy giá từ variants (ưu tiên promotionPrice nếu có)
       const prices = variants
+        .map((v: any) => v?.promotionPrice || v?.price)
+        .filter((price: number) => price != null && price > 0);
+      
+      // Lấy giá gốc để so sánh
+      const originalPrices = variants
         .map((v: any) => v?.price)
         .filter((price: number) => price != null && price > 0);
       
       if (prices.length > 0) {
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
+        const minOriginalPrice = originalPrices.length > 0 ? Math.min(...originalPrices) : minPrice;
+        const maxOriginalPrice = originalPrices.length > 0 ? Math.max(...originalPrices) : maxPrice;
         const currency = variants[0]?.currency || 'VND';
+        const hasPromotion = variants.some((v: any) => v?.promotionPrice != null && v?.promotionPrice < v?.price);
         
         if (minPrice === maxPrice) {
-          return { min: minPrice, max: maxPrice, currency, isRange: false };
+          return { 
+            min: minPrice, 
+            max: maxPrice, 
+            minOriginal: minOriginalPrice,
+            maxOriginal: maxOriginalPrice,
+            currency, 
+            isRange: false,
+            hasPromotion 
+          };
         }
-        return { min: minPrice, max: maxPrice, currency, isRange: true };
+        return { 
+          min: minPrice, 
+          max: maxPrice, 
+          minOriginal: minOriginalPrice,
+          maxOriginal: maxOriginalPrice,
+          currency, 
+          isRange: true,
+          hasPromotion 
+        };
       }
     }
     
@@ -43,12 +67,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       return { 
         min: productPrice, 
         max: productPrice, 
+        minOriginal: productPrice,
+        maxOriginal: productPrice,
         currency: product?.currency || 'VND', 
-        isRange: false 
+        isRange: false,
+        hasPromotion: false
       };
     }
     
-    return { min: 0, max: 0, currency: 'VND', isRange: false };
+    return { min: 0, max: 0, minOriginal: 0, maxOriginal: 0, currency: 'VND', isRange: false, hasPromotion: false };
   };
 
   const priceRange = getPriceRange();
@@ -174,17 +201,51 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               )}
             </div>
 
-            <p className="mt-2 text-lg font-bold text-indigo-600">
-              {priceRange.isRange ? (
-                <>
-                  {priceRange.min.toLocaleString('vi-VN')} - {priceRange.max.toLocaleString('vi-VN')} {priceRange.currency}
-                </>
+            <div className="mt-2">
+              {priceRange.hasPromotion ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                    FLASH SALE
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-red-600">
+                      {priceRange.isRange ? (
+                        <>
+                          {priceRange.min.toLocaleString('vi-VN')} - {priceRange.max.toLocaleString('vi-VN')} {priceRange.currency}
+                        </>
+                      ) : (
+                        <>
+                          {priceRange.min.toLocaleString('vi-VN')} {priceRange.currency}
+                        </>
+                      )}
+                    </span>
+                    <span className="text-sm text-gray-500 line-through">
+                      {priceRange.isRange ? (
+                        <>
+                          {priceRange.minOriginal.toLocaleString('vi-VN')} - {priceRange.maxOriginal.toLocaleString('vi-VN')} {priceRange.currency}
+                        </>
+                      ) : (
+                        <>
+                          {priceRange.minOriginal.toLocaleString('vi-VN')} {priceRange.currency}
+                        </>
+                      )}
+                    </span>
+                  </div>
+                </div>
               ) : (
-                <>
-                  {priceRange.min.toLocaleString('vi-VN')} {priceRange.currency}
-                </>
+                <p className="text-lg font-bold text-indigo-600">
+                  {priceRange.isRange ? (
+                    <>
+                      {priceRange.min.toLocaleString('vi-VN')} - {priceRange.max.toLocaleString('vi-VN')} {priceRange.currency}
+                    </>
+                  ) : (
+                    <>
+                      {priceRange.min.toLocaleString('vi-VN')} {priceRange.currency}
+                    </>
+                  )}
+                </p>
               )}
-            </p>
+            </div>
           </div>
         </Link>
       </div>

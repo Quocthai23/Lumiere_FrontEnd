@@ -23,6 +23,7 @@ export interface ProductVariant {
   size?: string;
   urlImage?: string;
   product?: Product;
+  promotionPrice?: number;
 }
 
 export interface Product {

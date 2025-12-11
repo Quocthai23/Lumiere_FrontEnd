@@ -19,7 +19,9 @@ import {
     Search,
     Menu,
     X,
-    ChevronDown, Factory
+    ChevronDown,
+    Factory,
+    Zap
 } from "lucide-react";
 
 const NavItem = ({ to, icon: Icon, children, end = false }: { to: string, icon: React.ElementType, children: React.ReactNode, end?: boolean }) => {
@@ -68,6 +70,7 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
                     <NavItem to="/admin/contacts" icon={MessageSquare}>Tin nhắn liên hệ</NavItem>
                     <NavItem to="/admin/collections" icon={LayoutGrid}>Bộ sưu tập</NavItem>
                     <NavItem to="/admin/vouchers" icon={Ticket}>Khuyến mãi</NavItem>
+                    <NavItem to="/admin/flash-sales" icon={Zap}>Flash Sale</NavItem>
                     <NavItem to="/admin/notifications" icon={Bell}>Thông báo</NavItem>
                 </nav>
             </div>
