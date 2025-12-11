@@ -34,7 +34,7 @@ const RegisterPage: React.FC = () => {
             setSuccess('Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.');
             setTimeout(() => {
                 navigate('/login');
-            }, 2000);
+            }, 1000);
         } catch (err: any) {
             if (err.response && err.response.data) {
                 const { errorKey, title } = err.response.data;

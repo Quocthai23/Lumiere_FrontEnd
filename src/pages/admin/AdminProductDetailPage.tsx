@@ -1,8 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 import type {Product, ProductVariant} from '../../types/product';
-import VariantFormModal from '../../components/admin/VariantFormModal';
-import {PlusCircle} from 'lucide-react';
 import ChunkUploadGallery from "../../components/admin/ChunkUploadGallery.tsx";
 import httpClient from "../../utils/HttpClient.ts";
 import type {Category} from "../../types/category.ts";
@@ -406,7 +404,7 @@ const AdminProductDetailPage: React.FC = () => {
                     </Card>
 
                     <Card>
-                        <CardHeader><CardTitle>Thuộc tính (OptionGroup)</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Thuộc tính</CardTitle></CardHeader>
                         <CardContent>
                             {product.id ? (
                                 <OptionGroupManager productId={Number(product.id)} />

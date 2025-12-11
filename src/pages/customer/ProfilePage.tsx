@@ -53,7 +53,8 @@ const ProfilePage: React.FC = () => {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
-        email: ''
+        email: '',
+        imageUrl: ''
     });
     const [infoSuccess, setInfoSuccess] = useState('');
     const [infoError, setInfoError] = useState('');
@@ -77,7 +78,8 @@ const ProfilePage: React.FC = () => {
                 setFormData({
                     firstName: response.data.firstName || '',
                     lastName: response.data.lastName || '',
-                    email: response.data.email || ''
+                    email: response.data.email || '',
+                    imageUrl: response.data.imageUrl
                 });
             } catch (error) {
                 setInfoError('Không thể tải thông tin tài khoản.');
@@ -148,7 +150,13 @@ const ProfilePage: React.FC = () => {
         <div className="space-y-8">
             <div className="flex items-center space-x-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {getInitials(formData.firstName, formData.lastName)}
+                    {
+                        formData?.imageUrl ? (
+                            <img src={formData.imageUrl} />
+                        ) : (<>
+                            getInitials(formData.firstName, formData.lastName)
+                        </>)
+                    }
                 </div>
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">

@@ -54,7 +54,7 @@ const VNPayQRModal: React.FC<VNPayQRModalProps> = ({ isOpen, onClose, qrCodeUrl,
             <p className="text-sm font-semibold text-gray-700 mb-2">Thông tin tài khoản:</p>
             <p className="text-xs text-gray-600"><span className="font-medium">Chủ tài khoản:</span> Nguyễn Minh Hội</p>
             <p className="text-xs text-gray-600"><span className="font-medium">Số tài khoản:</span> MB-4730865860204</p>
-            <p className="text-xs text-gray-600"><span className="font-medium">Ngân hàng:</span> Techcombank (TPB)</p>
+            <p className="text-xs text-gray-600"><span className="font-medium">Ngân hàng:</span> MbBank (MB)</p>
           </div>
           
           <p className="text-sm text-gray-500 mb-2">
