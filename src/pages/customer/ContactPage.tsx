@@ -132,7 +132,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div className="ml-4">
                         <h3 className="font-semibold text-lg">Địa chỉ</h3>
-                        <p className="text-indigo-200">123 Đường Thời Trang, Quận 1, TP.HCM</p>
+                        <p className="text-indigo-200">Đường Yên, Xuân Nộn, Đông Anh, Hà Nội</p>
                     </div>
                   </div>
                   {/* Email */}
@@ -156,7 +156,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div className="ml-4">
                         <h3 className="font-semibold text-lg">Điện thoại</h3>
-                        <p className="text-indigo-200">(028) 3812 3456</p>
+                        <p className="text-indigo-200">0865860204</p>
                     </div>
                   </div>
                 </div>

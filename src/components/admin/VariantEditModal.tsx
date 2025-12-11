@@ -71,6 +71,7 @@ function formatVND(n?: number | null) {
 const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) => {
     // form state
     const [name, setName] = useState<string>(variant?.name ?? '');
+    const [quantity, setQuantity] = useState<string>(variant?.stockQuantity ?? '');
     const [priceRaw, setPriceRaw] = useState<number>(variant?.price ?? 0);
     const [imageUrl, setImageUrl] = useState<string | null>(variant?.urlImage ?? null);
 
@@ -88,6 +89,7 @@ const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) 
             setName(variant?.name ?? '');
             setPriceRaw(variant?.price ?? 0);
             setImageUrl(variant?.urlImage ?? null);
+            setQuantity(variant?.stockQuantity ?? null);
             setSaving(false);
             setUploading(false);
             setUploadPct(0);
@@ -148,7 +150,8 @@ const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) 
                 productId: variant.productId,
                 name: trimmed,
                 price: priceRaw,
-                urlImage: imageUrl || null,   // chỉ gửi imageUrl
+                stockQuantity: quantity,
+                urlImage: imageUrl || null,
             };
 
             const updated = await httpClient.put<any>(`/product-variants/${variant.id}`, payload);
@@ -182,6 +185,17 @@ const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) 
                                 onChange={(e) => setName(e.target.value)}
                                 className="border rounded px-2 py-2 w-full"
                                 placeholder="VD: Đỏ / M"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-1">Số lượng</label>
+                            <input
+                                value={quantity}
+                                onChange={(e) => setQuantity(e.target.value)}
+                                className="border rounded px-2 py-2 w-full"
+                                placeholder=""
+                                type={"number"}
                             />
                         </div>
 
@@ -230,7 +244,7 @@ const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) 
                                 <div className="w-full h-2 bg-gray-200 rounded">
                                     <div
                                         className="h-2 bg-emerald-500 rounded transition-all"
-                                        style={{ width: `${uploadPct}%` }}
+                                        style={{width: `${uploadPct}%`}}
                                     />
                                 </div>
                             )}
@@ -239,7 +253,8 @@ const VariantEditModal: React.FC<Props> = ({ open, variant, onClose, onSaved }) 
 
                     {/* Right: image url + preview */}
                     <div className="space-y-2">
-                        <div className="w-56 h-56 border rounded-md bg-gray-50 overflow-hidden flex items-center justify-center">
+                        <div
+                            className="w-56 h-56 border rounded-md bg-gray-50 overflow-hidden flex items-center justify-center">
                             {imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={imageUrl} alt="preview" className="max-w-full max-h-full object-contain" />
