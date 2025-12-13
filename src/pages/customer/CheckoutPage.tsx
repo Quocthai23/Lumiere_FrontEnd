@@ -194,23 +194,13 @@ const CheckoutPage: React.FC = () => {
     const orderFinalTotalPrice = totalPrice + orderShippingFee;
 
     // Sử dụng endpoint mới từ backend: POST /orders/create-from-cart
-    // Tạo JSON string cho shippingInfo
-    const shippingInfoJson = JSON.stringify({
-      fullName: shippingInfo.fullName,
-      phone: shippingInfo.phone,
-      street: shippingInfo.street,
-      city: shippingInfo.city,
-      note: shippingInfo.note || ''
-    });
-
     const orderPayload = {
       customerId: customer?.id || null, // null for guest
       paymentMethod: paymentMethod,
-      note: shippingInfo.note || '',
+      note: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}. Ghi chú: ${shippingInfo.note}`,
       redeemedPoints: pointsToUse || 0,
       voucherCode: appliedVoucher?.code || null,
-      shippingFee: orderShippingFee,
-      shippingInfo: shippingInfoJson
+      shippingFee: orderShippingFee
     };
     
     try {

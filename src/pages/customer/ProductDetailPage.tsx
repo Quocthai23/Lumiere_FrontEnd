@@ -444,9 +444,28 @@ const ProductDetailPage: React.FC = () => {
                     </div>
 
                     {selectedVariant && (
-                        <p className="text-3xl font-bold text-indigo-600 mb-4">
-                            {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
-                        </p>
+                        <div className="mb-4">
+                            {selectedVariant.promotionPrice != null && 
+                             selectedVariant.promotionPrice < selectedVariant.price ? (
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                                        FLASH SALE
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-3xl font-bold text-red-600">
+                                            {selectedVariant.promotionPrice.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                                        </span>
+                                        <span className="text-xl text-gray-500 line-through">
+                                            {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-3xl font-bold text-indigo-600">
+                                    {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                                </p>
+                            )}
+                        </div>
                     )}
 
                     <p className="text-gray-600 mb-6 leading-relaxed">

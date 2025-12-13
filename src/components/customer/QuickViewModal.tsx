@@ -83,9 +83,28 @@ const QuickViewModal: React.FC = () => {
              </div>
              
              {selectedVariant && (
-                <p className="text-2xl font-semibold text-indigo-600 mb-4">
-                    {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
-                </p>
+                <div className="mb-4">
+                    {selectedVariant.promotionPrice != null && 
+                     selectedVariant.promotionPrice < selectedVariant.price ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                                FLASH SALE
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-semibold text-red-600">
+                                    {selectedVariant.promotionPrice.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                                </span>
+                                <span className="text-lg text-gray-500 line-through">
+                                    {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-2xl font-semibold text-indigo-600">
+                            {selectedVariant.price.toLocaleString('vi-VN')} {selectedVariant.currency || 'VND'}
+                        </p>
+                    )}
+                </div>
              )}
 
              <div className="mb-6">

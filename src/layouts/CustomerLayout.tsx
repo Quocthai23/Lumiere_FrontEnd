@@ -179,7 +179,7 @@ const CustomerLayout: React.FC = () => {
                             <>
                                 <Link to="/login" className="text-gray-600 hover:text-indigo-600 font-semibold whitespace-nowrap ml-2">Đăng nhập</Link>
                                 <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-semibold whitespace-nowrap">Đăng ký</Link>
-                            </>
+                            </> 
                         )}
                     </div>
                 </nav>
@@ -194,7 +194,6 @@ const CustomerLayout: React.FC = () => {
                 <div className="bg-gray-900 text-center py-4"><p className="text-gray-500 text-sm">&copy; {new Date().getFullYear()} Lumiere Fashion. Đã đăng ký bản quyền.</p></div>
             </footer>
             <QuickViewModal />
-            <LiveChatWidget />
         </div>
     );
 };

@@ -27,6 +27,7 @@ import ComparisonPage from '../pages/customer/ComparisonPage';
 import LoyaltyPage from '../pages/customer/LoyaltyPage';
 import NotificationsPage from '../pages/customer/NotificationsPage';
 import CustomerVoucherPage from '../pages/customer/CustomerVoucherPage';
+import FlashSaleDetailPage from '../pages/customer/FlashSaleDetailPage';
 
 // Admin Pages
 import DashboardPage from '../pages/admin/DashboardPage';
@@ -79,6 +80,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="search" element={<SearchResultsPage />} />
                     <Route path="compare" element={<ComparisonPage />} />
                     <Route path="vouchers" element={<CustomerVoucherPage />} />
+                    <Route path="flash-sales/:id" element={<FlashSaleDetailPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="order-confirmation" element={<OrderConfirmationPage />} />
                 </Route>

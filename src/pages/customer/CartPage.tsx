@@ -113,7 +113,28 @@ const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantit
                 <h2 className="font-bold text-lg text-gray-800">{item.product.name}</h2>
             </Link>
             <p className="text-sm text-gray-500 mt-1">{item.variant.name.replace(item.product.name + " - ", "")}</p>
-            <p className="text-indigo-600 font-semibold text-md my-3">{item.variant.price.toLocaleString('vi-VN')} VND</p>
+            <div className="my-3">
+              {item.variant.promotionPrice != null && 
+               item.variant.promotionPrice < item.variant.price ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                    FLASH SALE
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-indigo-600 font-semibold text-md text-red-600">
+                      {item.variant.promotionPrice.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                    </span>
+                    <span className="text-sm text-gray-500 line-through">
+                      {item.variant.price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-indigo-600 font-semibold text-md">
+                  {item.variant.price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                </p>
+              )}
+            </div>
             <QuantityInput
                 quantity={item?.quantity}
                 stockQuantity={item.variant.stockQuantity}
@@ -136,7 +157,9 @@ const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantit
         </div>
         <div className="flex flex-col items-end justify-between h-full ml-4">
             <p className="font-bold text-lg text-gray-900">
-                {(item.variant.price * item.quantity).toLocaleString('vi-VN')} VND
+                {((item.variant.promotionPrice != null && item.variant.promotionPrice < item.variant.price 
+                  ? item.variant.promotionPrice 
+                  : item.variant.price) * item.quantity).toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
             </p>
             <button onClick={() => onRemove(item.variant.id)} className="text-gray-400 hover:text-red-500 transition-colors mt-auto" title="Xóa sản phẩm">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

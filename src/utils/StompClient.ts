@@ -107,7 +107,15 @@ class StompClientService {
 
     const subscription = this.client.subscribe('/topic/public', (message: IMessage) => {
       try {
-        const chatMessage: ChatMessage = JSON.parse(message.body);
+        const rawMessage = JSON.parse(message.body);
+        // Map từ backend format (text) sang frontend format (message)
+        const chatMessage: ChatMessage = {
+          id: rawMessage.id,
+          sender: rawMessage.sender?.toLowerCase() === 'admin' || rawMessage.sender?.toLowerCase() === 'bot' ? 'admin' : 'user',
+          message: rawMessage.text || rawMessage.message || '',
+          timestamp: rawMessage.timestamp || new Date().toISOString(),
+          contactMessageId: rawMessage.contactMessageId,
+        };
         onMessage(chatMessage);
       } catch (error) {
         console.error('Error parsing message:', error);
@@ -131,7 +139,15 @@ class StompClientService {
     const topic = `/topic/session/${sessionId}`;
     const subscription = this.client.subscribe(topic, (message: IMessage) => {
       try {
-        const chatMessage: ChatMessage = JSON.parse(message.body);
+        const rawMessage = JSON.parse(message.body);
+        // Map từ backend format (text) sang frontend format (message)
+        const chatMessage: ChatMessage = {
+          id: rawMessage.id,
+          sender: rawMessage.sender?.toLowerCase() === 'admin' || rawMessage.sender?.toLowerCase() === 'bot' ? 'admin' : 'user',
+          message: rawMessage.text || rawMessage.message || '',
+          timestamp: rawMessage.timestamp || new Date().toISOString(),
+          contactMessageId: rawMessage.contactMessageId,
+        };
         onMessage(chatMessage);
       } catch (error) {
         console.error('Error parsing message:', error);
@@ -155,7 +171,15 @@ class StompClientService {
     const topic = `/topic/contact/${contactMessageId}`;
     const subscription = this.client.subscribe(topic, (message: IMessage) => {
       try {
-        const chatMessage: ChatMessage = JSON.parse(message.body);
+        const rawMessage = JSON.parse(message.body);
+        // Map từ backend format (text) sang frontend format (message)
+        const chatMessage: ChatMessage = {
+          id: rawMessage.id,
+          sender: rawMessage.sender?.toLowerCase() === 'admin' || rawMessage.sender?.toLowerCase() === 'bot' ? 'admin' : 'user',
+          message: rawMessage.text || rawMessage.message || '',
+          timestamp: rawMessage.timestamp || new Date().toISOString(),
+          contactMessageId: rawMessage.contactMessageId,
+        };
         onMessage(chatMessage);
       } catch (error) {
         console.error('Error parsing message:', error);

@@ -36,6 +36,11 @@ export const flashSaleApi = {
     return await httpClient.get<FlashSale>(`/flash-sales/${id}`);
   },
 
+  // Get flash sale products by flash sale ID (new endpoint in FlashSaleResource)
+  getFlashSaleProducts: async (id: number): Promise<FlashSaleProduct[]> => {
+    return await httpClient.get<FlashSaleProduct[]>(`/flash-sales/${id}/products`);
+  },
+
   // Create flash sale
   createFlashSale: async (data: Omit<FlashSale, 'id'>): Promise<FlashSale> => {
     return await httpClient.post<FlashSale>('/flash-sales', data);
@@ -85,6 +90,11 @@ export const flashSaleApi = {
   // Get available flash sale products
   getAvailableFlashSaleProducts: async (): Promise<FlashSaleProduct[]> => {
     return await httpClient.get<FlashSaleProduct[]>('/flash-sale-products/available');
+  },
+
+  // Get all flash sale products sorted by discount percentage (highest discount first)
+  getFlashSaleProductsSortedByDiscount: async (): Promise<FlashSaleProduct[]> => {
+    return await httpClient.get<FlashSaleProduct[]>('/flash-sale-products/sorted-by-discount');
   },
 };
 

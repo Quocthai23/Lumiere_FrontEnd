@@ -9,6 +9,9 @@ interface WebSocketChatProps {
   sessionId?: number;
   customerEmail?: string;
   customerName?: string;
+  autoOpen?: boolean;
+  prefillMessage?: string; // Tin nhắn tự động điền vào input
+  onPrefillComplete?: () => void; // Callback khi đã điền xong
 }
 
 const WebSocketChat: React.FC<WebSocketChatProps> = ({
@@ -16,6 +19,9 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
   sessionId,
   customerEmail,
   customerName,
+  autoOpen = false,
+  prefillMessage,
+  onPrefillComplete,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -26,15 +32,56 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
   const [isSending, setIsSending] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const subscriptionRef = useRef<string | null>(null);
   const currentSessionIdRef = useRef<number | undefined>(undefined);
   const currentContactMessageIdRef = useRef<number | undefined>(undefined);
   const isConnectingRef = useRef<boolean>(false);
+  const lastPrefillMessageRef = useRef<string>('');
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Tự động điền tin nhắn từ bên ngoài vào input
+  useEffect(() => {
+    if (prefillMessage && prefillMessage.trim() !== '' && prefillMessage !== lastPrefillMessageRef.current) {
+      lastPrefillMessageRef.current = prefillMessage;
+      setInputValue(prefillMessage);
+      // Tự động mở chatbox nếu chưa mở
+      if (!isOpen) {
+        setIsOpen(true);
+        setIsMinimized(false);
+      }
+      // Focus vào input để người dùng có thể chỉnh sửa hoặc gửi ngay
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Đặt cursor ở cuối text
+          inputRef.current.setSelectionRange(prefillMessage.length, prefillMessage.length);
+        }
+      }, 150);
+      // Gọi callback nếu có
+      if (onPrefillComplete) {
+        setTimeout(() => {
+          onPrefillComplete();
+        }, 200);
+      }
+    }
+  }, [prefillMessage, isOpen, onPrefillComplete]);
+
+  // Tự động mở chatbox khi có contactMessageId hoặc khi autoOpen = true
+  useEffect(() => {
+    if (contactMessageId && autoOpen) {
+      setIsOpen(true);
+      setIsMinimized(false);
+      // Load chat history ngay khi mở
+      if (contactMessageId) {
+        loadChatHistory();
+      }
+    }
+  }, [contactMessageId, autoOpen]);
 
   // STOMP connection management - chỉ connect một lần
   useEffect(() => {
@@ -108,7 +155,7 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
             return [...prev, {
               id: message.id || Date.now(),
               sender: message.sender,
-              message: message.message,
+              message: message.message || (message as any).text || '', // Handle both 'message' and 'text' fields
               timestamp: message.timestamp,
               contactMessageId: message.contactMessageId,
             }];
@@ -131,7 +178,7 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
             return [...prev, {
               id: message.id || Date.now(),
               sender: message.sender,
-              message: message.message,
+              message: message.message || (message as any).text || '', // Handle both 'message' and 'text' fields
               timestamp: message.timestamp,
               contactMessageId: message.contactMessageId,
             }];
@@ -151,7 +198,7 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
           return [...prev, {
             id: message.id || Date.now(),
             sender: message.sender,
-            message: message.message,
+            message: message.message || (message as any).text || '', // Handle both 'message' and 'text' fields
             timestamp: message.timestamp,
             contactMessageId: message.contactMessageId,
           }];
@@ -315,43 +362,51 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
                   <p className="text-sm mt-2">Hãy gửi tin nhắn để bắt đầu.</p>
                 </div>
               ) : (
-                messages.map((msg, index) => (
-                  <div
-                    key={msg.id || index}
-                    className={`flex items-end gap-2 ${
-                      msg.sender === 'user' ? 'justify-end' : ''
-                    }`}
-                  >
-                    {msg.sender === 'admin' && (
-                      <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs">
-                        A
-                      </div>
-                    )}
+                messages.map((msg, index) => {
+                  const isUser = msg.sender === 'user';
+                  return (
                     <div
-                      className={`
-                        max-w-[80%] p-3 rounded-2xl
-                        ${
-                          msg.sender === 'user'
-                            ? 'bg-indigo-500 text-white rounded-br-none'
-                            : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
-                        }
-                      `}
+                      key={msg.id || index}
+                      className={`flex items-end gap-2 ${
+                        isUser ? 'justify-end' : 'justify-start'
+                      }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                    {msg.sender === 'user' && (
-                      <div className="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs">
-                        {customerName?.[0]?.toUpperCase() || 'U'}
+                      {/* Avatar cho admin - hiển thị bên trái */}
+                      {!isUser && (
+                        <div className="w-8 h-8 bg-blue-100 border-2 border-indigo-600 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs text-indigo-600">
+                          A
+                        </div>
+                      )}
+                      {/* Tin nhắn */}
+                      <div
+                        className={`
+                          max-w-[80%] p-3 rounded-2xl
+                          ${
+                            isUser
+                              ? 'bg-indigo-500 text-white rounded-br-none'
+                              : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
+                          }
+                        `}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                        <p className={`text-xs mt-1 ${
+                          isUser ? 'opacity-80' : 'opacity-70 text-gray-500'
+                        }`}>
+                          {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                ))
+                      {/* Avatar cho user - hiển thị bên phải */}
+                      {isUser && (
+                        <div className="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs">
+                          {customerName?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -362,12 +417,20 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
               className="p-3 border-t bg-white flex items-center gap-2 flex-shrink-0 rounded-b-xl"
             >
               <input
+                ref={inputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Nhập tin nhắn..."
                 className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                 disabled={isSending}
+                onPaste={(e) => {
+                  // Cho phép paste bình thường, nhưng có thể xử lý thêm nếu cần
+                  const pastedText = e.clipboardData.getData('text');
+                  if (pastedText.trim()) {
+                    // Có thể xử lý paste event ở đây nếu cần
+                  }
+                }}
               />
               <button
                 type="submit"
@@ -386,15 +449,11 @@ const WebSocketChat: React.FC<WebSocketChatProps> = ({
         )}
       </div>
 
-      {/* Chat Bubble - chỉ hiện khi chưa có contactMessageId */}
-      {!contactMessageId && (
+      {/* Chat Bubble - chỉ hiện khi chưa có contactMessageId và boxchat chưa mở */}
+      {!contactMessageId && !isOpen && (
         <button
           onClick={toggleChat}
-          className={`
-            transition-all duration-300 ease-in-out
-            ${!isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'}
-            absolute bottom-0 right-0 bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center transform hover:scale-110
-          `}
+          className="transition-all duration-300 ease-in-out absolute bottom-0 right-0 bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center transform hover:scale-110"
           title="Mở chat hỗ trợ"
         >
           <MessageSquare size={32} />

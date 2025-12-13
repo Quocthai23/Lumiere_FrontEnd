@@ -89,9 +89,28 @@ const WishlistCard: React.FC<WishlistCardProps> = ({ item, onRemove }) => {
             <p className="text-sm text-gray-500 mt-1">
               {variant.name.replace((product?.name || '') + ' - ', '')}
             </p>
-            <p className="text-indigo-600 font-semibold text-md my-3">
-              {variant.price.toLocaleString('vi-VN')} {variant.currency || 'VND'}
-            </p>
+            <div className="my-3">
+              {variant.promotionPrice != null && 
+               variant.promotionPrice < variant.price ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                    FLASH SALE
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-indigo-600 font-semibold text-md text-red-600">
+                      {variant.promotionPrice.toLocaleString('vi-VN')} {variant.currency || 'VND'}
+                    </span>
+                    <span className="text-sm text-gray-500 line-through">
+                      {variant.price.toLocaleString('vi-VN')} {variant.currency || 'VND'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-indigo-600 font-semibold text-md">
+                  {variant.price.toLocaleString('vi-VN')} {variant.currency || 'VND'}
+                </p>
+              )}
+            </div>
             {variant.stockQuantity !== undefined && (
               <p className={`text-xs mt-2 ${
                 variant.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
