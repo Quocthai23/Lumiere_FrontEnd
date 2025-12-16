@@ -7,6 +7,7 @@ export interface Review {
   author: string;
   comment: string;
   createdAt: string;
+  reply?: string; // Câu trả lời từ cửa hàng
 }
 
 export interface ProductVariant {
@@ -41,6 +42,4 @@ export interface Product {
   averageRating: number;
   reviewCount: number;
   attachmentDTOS?: AttachmentDTO[];
-  price?: number; // Giá rẻ nhất của variant
-  promotionPrice?: number; // Giá flashsale rẻ nhất
 }

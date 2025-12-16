@@ -193,18 +193,44 @@ const CheckoutPage: React.FC = () => {
     const orderShippingFee = calculateShippingFee();
     const orderFinalTotalPrice = totalPrice + orderShippingFee;
 
-    // Sử dụng endpoint mới từ backend: POST /orders/create-from-cart
-    const orderPayload = {
-      customerId: customer?.id || null, // null for guest
-      paymentMethod: paymentMethod,
-      note: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}. Ghi chú: ${shippingInfo.note}`,
-      redeemedPoints: pointsToUse || 0,
-      voucherCode: appliedVoucher?.code || null,
-      shippingFee: orderShippingFee
-    };
-    
     try {
-      const response = await axiosClient.post('/orders/create-from-cart', orderPayload);
+      let response;
+      
+      // Nếu chưa đăng nhập, sử dụng endpoint guest order
+      if (!isAuthenticated()) {
+        // Chuyển đổi cartItems sang format GuestCartItemDTO
+        const guestCartItems = cartItems.map(item => ({
+          variantId: item.variant.id,
+          quantity: item.quantity,
+          unitPrice: item.variant.price,
+          totalPrice: item.variant.price * item.quantity
+        }));
+
+        const guestOrderPayload = {
+          cartItems: guestCartItems,
+          paymentMethod: paymentMethod,
+          note: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}. Ghi chú: ${shippingInfo.note}`,
+          redeemedPoints: 0, // Guest không có điểm tích lũy
+          voucherCode: appliedVoucher?.code || null,
+          shippingFee: orderShippingFee,
+          shippingInfo: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}`
+        };
+
+        response = await axiosClient.post('/orders/create-guest-order', guestOrderPayload);
+      } else {
+        // Đã đăng nhập, sử dụng endpoint thông thường
+        const orderPayload = {
+          customerId: customer?.id || null,
+          paymentMethod: paymentMethod,
+          note: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}. Ghi chú: ${shippingInfo.note}`,
+          redeemedPoints: pointsToUse || 0,
+          voucherCode: appliedVoucher?.code || null,
+          shippingFee: orderShippingFee,
+          shippingInfo: `Tên: ${shippingInfo.fullName}, SĐT: ${shippingInfo.phone}, Địa chỉ: ${shippingInfo.street}, ${shippingInfo.city}`
+        };
+
+        response = await axiosClient.post('/orders/create-from-cart', orderPayload);
+      }
       const newOrder = response.data;
       
       // Nếu là thanh toán QR (VNPay), generate QR code

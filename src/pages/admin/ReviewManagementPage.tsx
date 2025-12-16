@@ -3,7 +3,6 @@ import type { Review } from '../../types/product';
 import { Star, Check, Trash2, CornerDownRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import httpClient from "../../utils/HttpClient.ts";
-import { productAnswerApi } from '../../api/productAnswerApi';
 
 // Định nghĩa kiểu dữ liệu Review mở rộng
 interface ReviewWithProduct extends Review {
@@ -12,8 +11,6 @@ interface ReviewWithProduct extends Review {
         name: string;
         slug: string;
     };
-    replyText?: string; // Thêm trường phản hồi
-    productAnswerId?: number; // ID của câu trả lời để có thể update
     status?: 'PENDING' | 'APPROVED' | 'REJECTED'; // Thêm trạng thái
 }
 
@@ -58,28 +55,7 @@ const ReviewManagementPage: React.FC = () => {
         setIsLoading(true);
         try {
             const response = await httpClient.get<ReviewWithProduct[]>('/product-reviews?_expand=product');
-            
-            // Fetch product answers để lấy replyText cho reviews
-            let productAnswers: any[] = [];
-            try {
-                productAnswers = await productAnswerApi.getAllProductAnswers();
-            } catch (err) {
-                console.warn('Không thể tải danh sách câu trả lời:', err);
-            }
-            
-            // Map product answers vào reviews
-            const reviewsWithAnswers = (response || []).map((review: ReviewWithProduct) => {
-                // Tìm product answer tương ứng với review này
-                const answer = productAnswers.find(a => a.productReviewId === review.id);
-                
-                return {
-                    ...review,
-                    replyText: answer?.answerText,
-                    productAnswerId: answer?.id
-                };
-            });
-            
-            setReviews(reviewsWithAnswers);
+            setReviews(response || []);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách đánh giá.');
@@ -143,31 +119,19 @@ const ReviewManagementPage: React.FC = () => {
         setIsSubmittingReply(true);
         try {
             const currentReview = reviews.find(r => r.id === reviewId);
+            if (!currentReview) return;
             
-            if (currentReview?.productAnswerId) {
-                // Update existing answer
-                const updatedAnswer = await productAnswerApi.updateProductAnswer(
-                    currentReview.id,
-                    { answerText: replyText }
-                );
-                setReviews(reviews.map(r => 
-                    r.id === reviewId 
-                        ? { ...r, replyText: updatedAnswer.answerText, productAnswerId: updatedAnswer.id } 
-                        : r
-                ));
-            } else {
-                // Create new answer
-                const newAnswer = await productAnswerApi.createProductAnswer({
-                    questionId: reviewId,
-                    answerText: replyText,
-                    author: 'Lumiere Store'
-                });
-                setReviews(reviews.map(r => 
-                    r.id === reviewId 
-                        ? { ...r, replyText: newAnswer.answerText, productAnswerId: newAnswer.id } 
-                        : r
-                ));
-            }
+            // Gọi API PUT để cập nhật review với reply
+            const updatedReview = await httpClient.put<ReviewWithProduct>(
+                `/product-reviews/${reviewId}`,
+                {
+                    ...currentReview,
+                    reply: replyText
+                }
+            );
+            
+            // Cập nhật state với review đã được cập nhật từ server
+            setReviews(reviews.map(r => r.id === reviewId ? updatedReview : r));
             
             setReplyingTo(null);
             setReplyText('');
@@ -182,7 +146,7 @@ const ReviewManagementPage: React.FC = () => {
     const startReplying = (reviewId: number) => {
         setReplyingTo(reviewId);
         const currentReview = reviews.find(r => r.id === reviewId);
-        setReplyText(currentReview?.replyText || '');
+        setReplyText(currentReview?.reply || '');
     };
 
 
@@ -242,10 +206,10 @@ const ReviewManagementPage: React.FC = () => {
                             </div>
                             {/* Reply Section */}
                             <div className="pl-12 mt-4">
-                                {review.replyText && replyingTo !== review.id && (
+                                {review.reply && replyingTo !== review.id && (
                                     <div className="border-l-2 border-indigo-200 pl-4">
                                         <p className="font-semibold text-sm text-indigo-700">Phản hồi từ cửa hàng:</p>
-                                        <p className="text-sm text-gray-600">{review.replyText}</p>
+                                        <p className="text-sm text-gray-600">{review.reply}</p>
                                     </div>
                                 )}
                                 {replyingTo === review.id ? (
@@ -280,7 +244,7 @@ const ReviewManagementPage: React.FC = () => {
                                 ) : (
                                     <button onClick={() => startReplying(review.id)} className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline mt-2">
                                         <CornerDownRight size={14} />
-                                        {review.replyText ? 'Chỉnh sửa phản hồi' : 'Phản hồi'}
+                                        {review.reply ? 'Chỉnh sửa phản hồi' : 'Phản hồi'}
                                     </button>
                                 )}
                             </div>

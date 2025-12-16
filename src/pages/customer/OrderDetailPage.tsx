@@ -16,6 +16,7 @@ const OrderDetailPage: React.FC = () => {
     const [selectedOrderItem, setSelectedOrderItem] = useState<OrderItem | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [isConfirmingReceived, setIsConfirmingReceived] = useState(false);
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -108,6 +109,39 @@ const OrderDetailPage: React.FC = () => {
         }
     };
 
+    const handleConfirmReceived = async () => {
+        if (!orderId || !order) return;
+
+        if (!confirm('Bạn có chắc chắn đã nhận được hàng?')) return;
+
+        setIsConfirmingReceived(true);
+        try {
+            await axiosClient.put(`/orders/${orderId}/status`, {
+                status: 'COMPLETED',
+                description: 'Khách hàng xác nhận đã nhận hàng'
+            });
+            alert('Xác nhận đã nhận hàng thành công!');
+            
+            // Refresh order data và status history
+            const response = await axiosClient.get<Order>(`/orders/${orderId}`);
+            const orderData = response.data;
+            
+            try {
+                const statusHistoryResponse = await axiosClient.get(`/orders/${orderId}/status-history`);
+                orderData.orderStatusHistory = statusHistoryResponse.data;
+            } catch (historyErr) {
+                console.warn("Không thể tải lịch sử trạng thái:", historyErr);
+            }
+            
+            setOrder(orderData);
+        } catch (err) {
+            console.error('Lỗi khi xác nhận đã nhận hàng:', err);
+            alert('Không thể xác nhận đã nhận hàng. Vui lòng thử lại.');
+        } finally {
+            setIsConfirmingReceived(false);
+        }
+    };
+
     // Generate QR code URL nếu paymentMethod là QR
     const generateQRCodeUrl = (): string | null => {
         if (order.paymentMethod === 'QR') {
@@ -126,6 +160,15 @@ const OrderDetailPage: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                 <Link to="/account/orders" className="text-indigo-600 hover:underline">&larr; Quay lại danh sách</Link>
                 <div className="flex gap-2">
+                    {order.status === 'DELIVERED' && (
+                        <button
+                            onClick={handleConfirmReceived}
+                            disabled={isConfirmingReceived}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-400"
+                        >
+                            {isConfirmingReceived ? 'Đang xác nhận...' : 'Xác nhận đã nhận hàng'}
+                        </button>
+                    )}
                     {canCancel && (
                         <button
                             onClick={handleOpenCancelModal}

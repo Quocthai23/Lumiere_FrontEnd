@@ -115,6 +115,12 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ product }) => {
               </div>
               <p className="text-gray-600">{review.comment}</p>
               <p className="text-xs text-gray-400 mt-2">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+              {review.reply && (
+                <div className="mt-4 pl-6 border-l-2 border-indigo-200">
+                  <p className="font-semibold text-sm text-indigo-700 mb-1">Phản hồi từ cửa hàng:</p>
+                  <p className="text-sm text-gray-600">{review.reply}</p>
+                </div>
+              )}
             </div>
           ))}
           {!isLoading && reviews.length === 0 && <p className="text-gray-500">Chưa có đánh giá nào cho sản phẩm này.</p>}

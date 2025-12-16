@@ -99,6 +99,31 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addToCart = async (product: Product, variant: ProductVariant, quantity: number) => {
     const existing = findItemByVariantId(variant.id);
 
+    // Nếu không đăng nhập, chỉ làm việc với localStorage
+    if (!isAuthenticated()) {
+      if (existing) {
+        // Tăng số lượng nếu đã có item
+        setCartItems(prev =>
+          prev.map(item =>
+            item.variant.id === variant.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          )
+        );
+      } else {
+        // Thêm item mới
+        const newItem: CartItem = {
+          id: undefined, // Không có id khi chưa đăng nhập
+          product,
+          variant,
+          quantity
+        };
+        setCartItems(prev => [...prev, newItem]);
+      }
+      return;
+    }
+
+    // Nếu đã đăng nhập, làm việc với backend
     // Nếu đã có item → có thể gọi PUT tăng quantity
     if (existing && existing.id != null) {
       const updatedQuantity = existing.quantity + quantity;
@@ -160,6 +185,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const removeFromCart = async (variantId: number) => {
     const item = findItemByVariantId(variantId);
 
+    // Nếu không đăng nhập, chỉ xóa khỏi localStorage
+    if (!isAuthenticated()) {
+      setCartItems(prev => prev.filter(ci => ci.variant.id !== variantId));
+      return;
+    }
+
+    // Nếu đã đăng nhập, xóa từ backend
     if (item?.id != null) {
       try {
         await httpClient.delete(`/cart-items/${item.id}`);
@@ -192,6 +224,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       newQuantity = stockQuantity;
     }
 
+    // Nếu không đăng nhập, chỉ update localStorage
+    if (!isAuthenticated()) {
+      setCartItems(prev =>
+        prev.map(ci =>
+          ci.variant.id === variantId ? { ...ci, quantity: newQuantity } : ci
+        )
+      );
+      return;
+    }
+
+    // Nếu đã đăng nhập, update backend
     // Optimistic update: cập nhật UI ngay lập tức
     setCartItems(prev =>
         prev.map(ci =>
@@ -251,6 +294,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Xoá hết: gọi nhiều DELETE hoặc tự tạo API DELETE /cart-items
   const clearCart = async () => {
+    // Nếu không đăng nhập, chỉ xóa khỏi localStorage
+    if (!isAuthenticated()) {
+      setCartItems([]);
+      setAppliedVoucher(null);
+      setVoucherDiscountAmount(0);
+      setRedeemedPoints(0);
+      return;
+    }
+
+    // Nếu đã đăng nhập, xóa từ backend
     try {
       // Nếu ông tạo thêm endpoint riêng:
       // await httpClient.delete('/cart-items');

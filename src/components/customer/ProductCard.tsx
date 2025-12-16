@@ -15,23 +15,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { openModal } = useQuickView();
   const { isInCompare, addItem, removeItem } = useComparison();
 
-  // Tính range giá từ product.price/promotionPrice hoặc variants
+  // Tính range giá từ variants hoặc product
   const getPriceRange = () => {
-    // Ưu tiên sử dụng price và promotionPrice từ product (từ API search)
-    if (product?.price != null && product.price > 0) {
-      const hasPromotion = product?.promotionPrice != null && product.promotionPrice > 0 && product.promotionPrice < product.price;
-      return {
-        min: hasPromotion ? product.promotionPrice : product.price,
-        max: hasPromotion ? product.promotionPrice : product.price,
-        minOriginal: product.price,
-        maxOriginal: product.price,
-        currency: 'VND',
-        isRange: false,
-        hasPromotion
-      };
-    }
-
-    // Fallback: lấy từ variants nếu không có price từ product
     const variants = product?.variants || [];
     
     if (variants.length > 0) {
@@ -76,35 +61,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       }
     }
     
+    // Nếu không có variants, lấy từ product (nếu có)
+    const productPrice = product?.price;
+    if (productPrice != null && productPrice > 0) {
+      return { 
+        min: productPrice, 
+        max: productPrice, 
+        minOriginal: productPrice,
+        maxOriginal: productPrice,
+        currency: product?.currency || 'VND', 
+        isRange: false,
+        hasPromotion: false
+      };
+    }
+    
     return { min: 0, max: 0, minOriginal: 0, maxOriginal: 0, currency: 'VND', isRange: false, hasPromotion: false };
   };
 
   const priceRange = getPriceRange();
   const defaultVariant = product?.variants?.find((v: any) => v?.isDefault);
-
-  // Tính phần trăm giảm giá
-  const calculateDiscountPercent = () => {
-    if (!priceRange.hasPromotion) return 0;
-    
-    // Ưu tiên tính từ product.price và product.promotionPrice
-    if (product?.price != null && product?.promotionPrice != null && product.price > 0 && product.promotionPrice < product.price) {
-      return Math.round(((product.price - product.promotionPrice) / product.price) * 100);
-    }
-    
-    // Fallback: tính từ variants
-    const variants = product?.variants || [];
-    const variantsWithPromotion = variants.filter((v: any) => v?.promotionPrice != null && v?.promotionPrice < v?.price && v?.price > 0);
-    
-    if (variantsWithPromotion.length > 0) {
-      const discounts = variantsWithPromotion.map((v: any) => {
-        return ((v.price - v.promotionPrice) / v.price) * 100;
-      });
-      return Math.round(Math.max(...discounts));
-    }
-    return 0;
-  };
-
-  const discountPercent = calculateDiscountPercent();
 
   // attachments: lấy ảnh chính từ productAttachments[].attachment.url
   const attachments: any[] | undefined = product?.productAttachments;
@@ -198,15 +173,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
 
         <Link to={`/products/${product.id}`} className="block">
-          <div className="w-full h-64 bg-gray-200 overflow-hidden relative">
-            {/* Banner giảm giá trên ảnh */}
-            {priceRange.hasPromotion && discountPercent > 0 && (
-              <div className="absolute top-3 left-3 z-20 animate-pulse">
-                <div className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm px-3 py-1.5 rounded-md shadow-lg flex items-center gap-1 border-2 border-white">
-                  <span className="text-lg leading-none">-{discountPercent}%</span>
-                </div>
-              </div>
-            )}
+          <div className="w-full h-64 bg-gray-200 overflow-hidden">
             <img
                 src={imageUrl}
                 alt={product?.name}

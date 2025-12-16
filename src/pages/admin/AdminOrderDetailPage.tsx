@@ -37,6 +37,7 @@ const OrderTimeline: React.FC<{ history: OrderStatusHistory[] }> = ({ history })
     const statusConfig: { [key: string]: { icon: React.ElementType; text: string } } = {
       PENDING: { icon: Package, text: 'Đã đặt hàng' },
       CONFIRMED: { icon: CheckCircle, text: 'Đã xác nhận' },
+      PROCESSING: { icon: Package, text: 'Đang đóng hàng' },
       SHIPPING: { icon: Truck, text: 'Đang vận chuyển' },
       DELIVERED: { icon: Home, text: 'Đã giao hàng' },
       COMPLETED: { icon: CheckCircle, text: 'Hoàn thành' },
@@ -188,7 +189,7 @@ const AdminOrderDetailPage: React.FC = () => {
         const statusMap: { [key: string]: string } = {
             'PENDING': 'Chờ xử lý',
             'CONFIRMED': 'Đã xác nhận',
-            'PROCESSING': 'Đang xử lý',
+            'PROCESSING': 'Đang đóng hàng',
             'SHIPPING': 'Đang vận chuyển',
             'DELIVERED': 'Đã giao hàng',
             'COMPLETED': 'Hoàn thành',
@@ -343,7 +344,15 @@ const AdminOrderDetailPage: React.FC = () => {
                                 </Card>
                             );
                         } catch (e) {
-                            return null;
+                            // Nếu không parse được JSON, hiển thị raw text
+                            return (
+                                <Card>
+                                    <CardHeader><CardTitle>Thông tin giao hàng</CardTitle></CardHeader>
+                                    <CardContent className="space-y-2 text-sm">
+                                        <div className="whitespace-pre-wrap">{order.shippingInfo}</div>
+                                    </CardContent>
+                                </Card>
+                            );
                         }
                     })()}
                 </div>
