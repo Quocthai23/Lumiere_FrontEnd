@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Customer } from '../../types/customer';
-import { PlusCircle, File, Search } from 'lucide-react';
+import { PlusCircle, File, Search, UserX } from 'lucide-react';
 import httpClient from "../../utils/HttpClient.ts";
 
 // --- Reusable UI Components ---
@@ -59,31 +59,37 @@ const CustomerManagementPage: React.FC = () => {
             .filter(customer => {
                 const term = searchTerm.toLowerCase();
                 if (!term) return true;
-                const fullName = `${customer.firstName || ''} ${customer.lastName || ''}`.toLowerCase();
+                const fullName = `${customer.firstName || customer.user?.firstName || ''} ${customer.lastName || customer.user?.lastName || ''}`.toLowerCase();
+                const email = (customer.email || customer.user?.email || '').toLowerCase();
+                const login = (customer.user?.login || '').toLowerCase();
                 return (
                     fullName.includes(term) ||
-                    customer.email.toLowerCase().includes(term)
+                    email.includes(term) ||
+                    login.includes(term)
                 );
             });
     }, [customers, activeTab, searchTerm]);
+
+    const handleDeactivateUser = async (login: string, customerId: number) => {
+        if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa tài khoản này?')) {
+            return;
+        }
+        try {
+            await httpClient.put(`/users/${login}/deactivate`);
+            // Refresh customer data
+            const response = await httpClient.get<Customer[]>('/customers?sort=id,asc');
+            setCustomers(response);
+            alert('Đã vô hiệu hóa tài khoản thành công.');
+        } catch (err) {
+            alert('Không thể vô hiệu hóa tài khoản.');
+            console.error(err);
+        }
+    };
     
     const TABS = ['All', 'GOLD', 'SILVER', 'BRONZE'];
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold">Quản lý Khách hàng</h1>
-                <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm hover:bg-gray-50">
-                        <File className="h-4 w-4" />
-                        <span>Xuất file</span>
-                    </button>
-                    <Link to="/admin/customers/new" className="flex items-center gap-2 bg-indigo-600 text-white rounded-md px-3 py-2 text-sm hover:bg-indigo-700">
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Thêm khách hàng</span>
-                    </Link>
-                </div>
-            </div>
 
             <Card>
                 <CardHeader>
@@ -121,6 +127,7 @@ const CustomerManagementPage: React.FC = () => {
                             <thead className="bg-gray-50 text-xs text-gray-700 uppercase">
                                 <tr>
                                     <th className="px-6 py-3">Khách Hàng</th>
+                                    <th className="px-6 py-3">Tài khoản User</th>
                                     <th className="px-6 py-3">Hạng</th>
                                     <th className="px-6 py-3">Số điện thoại</th>
                                     <th className="px-6 py-3">Điểm tích lũy</th>
@@ -129,29 +136,62 @@ const CustomerManagementPage: React.FC = () => {
                             </thead>
                             <tbody className="divide-y">
                                  {isLoading ? (
-                                    <tr><td colSpan={5} className="text-center p-8">Đang tải...</td></tr>
+                                    <tr><td colSpan={6} className="text-center p-8">Đang tải...</td></tr>
                                 ) : error ? (
-                                     <tr><td colSpan={5} className="text-center p-8 text-red-500">{error}</td></tr>
+                                     <tr><td colSpan={6} className="text-center p-8 text-red-500">{error}</td></tr>
                                 ) : filteredCustomers.map((customer) => (
                                 <tr key={customer.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500">
-                                                {customer.firstName?.[0] || ''}{customer.lastName?.[0] || ''}
+                                                {customer.firstName?.[0] || customer.user?.firstName?.[0] || ''}{customer.lastName?.[0] || customer.user?.lastName?.[0] || ''}
                                             </div>
                                             <div>
-                                                <div className="font-medium text-gray-800">{customer.firstName} {customer.lastName}</div>
-                                                <div className="text-gray-500 text-xs">{customer.email}</div>
+                                                <div className="font-medium text-gray-800">
+                                                    {customer.firstName || customer.user?.firstName || ''} {customer.lastName || customer.user?.lastName || ''}
+                                                </div>
+                                                <div className="text-gray-500 text-xs">{customer.email || customer.user?.email || 'N/A'}</div>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {customer.user ? (
+                                            <div>
+                                                <div className="font-medium text-gray-800">{customer.user.login || 'N/A'}</div>
+                                                <div className="text-gray-500 text-xs flex items-center gap-1">
+                                                    {customer.user.activated ? (
+                                                        <span className="text-green-600">✓ Đã kích hoạt</span>
+                                                    ) : (
+                                                        <span className="text-red-600">✗ Chưa kích hoạt</span>
+                                                    )}
+                                                </div>
+                                                {customer.user.email && customer.user.email !== customer.email && (
+                                                    <div className="text-gray-400 text-xs mt-1">{customer.user.email}</div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">Không có tài khoản</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4"><TierBadge tier={customer.tier} /></td>
                                     <td className="px-6 py-4">{customer.phone || 'N/A'}</td>
                                     <td className="px-6 py-4 font-semibold">{customer.loyaltyPoints?.toLocaleString('vi-VN') || 0}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <Link to={`/admin/customers/${customer.id}`} className="font-medium text-indigo-600 hover:underline">
-                                            Xem chi tiết
-                                        </Link>
+                                        <div className="flex items-center justify-end gap-3">
+                                            <Link to={`/admin/customers/${customer.id}`} className="font-medium text-indigo-600 hover:underline">
+                                                Xem chi tiết
+                                            </Link>
+                                            {customer.user?.activated && customer.user?.login && (
+                                                <button
+                                                    onClick={() => handleDeactivateUser(customer.user!.login!, customer.id!)}
+                                                    className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                                    title="Vô hiệu hóa tài khoản"
+                                                >
+                                                    <UserX className="h-4 w-4" />
+                                                    <span>Unactive</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                                 ))}
@@ -168,5 +208,6 @@ const CustomerManagementPage: React.FC = () => {
 };
 
 export default CustomerManagementPage;
+
 
 

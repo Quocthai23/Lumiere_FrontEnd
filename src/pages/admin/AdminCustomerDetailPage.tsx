@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import type {Customer} from '../../types/customer';
 import type {Order} from '../../types/order';
-import {DollarSign, Edit, Mail, MapPin, Phone, ShoppingCart, Star, User} from 'lucide-react';
+import {DollarSign, Edit, Mail, MapPin, Phone, ShoppingCart, Star, User, UserX} from 'lucide-react';
 import httpClient from "../../utils/HttpClient.ts";
 
 // --- Reusable UI Components ---
@@ -68,6 +68,23 @@ const AdminCustomerDetailPage: React.FC = () => {
         fetchDetails();
     }, [customerId]);
 
+    const handleDeactivateUser = async () => {
+        if (!customer?.user?.login) return;
+        if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa tài khoản này?')) {
+            return;
+        }
+        try {
+            await httpClient.put(`/users/${customer.user.login}/deactivate`);
+            // Refresh customer data
+            const customerResponse = await httpClient.get<Customer>(`/customers/${customerId}`);
+            setCustomer(customerResponse);
+            alert('Đã vô hiệu hóa tài khoản thành công.');
+        } catch (err) {
+            alert('Không thể vô hiệu hóa tài khoản.');
+            console.error(err);
+        }
+    };
+
     if (isLoading) return <p>Đang tải...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
     if (!customer) return <p>Không tìm thấy khách hàng.</p>;
@@ -79,9 +96,14 @@ const AdminCustomerDetailPage: React.FC = () => {
                      <Link to="/admin/customers" className="text-indigo-600 hover:underline mb-2 inline-block text-sm">&larr; Quay lại danh sách</Link>
                      <h1 className="text-2xl font-bold">{customer.firstName} {customer.lastName}</h1>
                 </div>
-                <Link to={`/admin/customers/edit/${customerId}`} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm">
-                    <Edit size={14}/> Chỉnh sửa
-                </Link>
+                {customer.user?.activated && customer.user?.login ? (
+                    <button
+                        onClick={handleDeactivateUser}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm transition-colors"
+                    >
+                        <UserX size={14}/> Unactive
+                    </button>
+                ) : null}
             </div>
             
              {/* Stat Cards */}

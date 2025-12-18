@@ -213,7 +213,7 @@ const AdminOrderDetailPage: React.FC = () => {
     if (error) return <p className="text-red-500">{error}</p>;
     if (!order) return <p>Không tìm thấy đơn hàng.</p>;
 
-    const subtotal = order.orderItems?.reduce((sum, item) => sum + (item?.totalPrice || 0), 0) || 0;
+    const subtotal = order.orderItems?.reduce((sum, item) => sum + (item?.totalPrice || 0), 0) || 0;    
 
     return (
         <div>
@@ -269,19 +269,19 @@ const AdminOrderDetailPage: React.FC = () => {
 
                                             <td className="p-2 text-right">{item.quantity || 0}</td>
                                             <td className="p-2 text-right">
-                                                {item.productVariant?.promotionPrice != null && 
-                                                 item.productVariant.promotionPrice < item.productVariant.price ? (
+                                                {
+                                                 item.unitPrice < (item.productVariant?.price || 0) ? (
                                                     <div className="flex flex-col items-end gap-1">
                                                         <div className="flex items-center gap-2">
                                                             <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
                                                                 FLASH SALE
                                                             </span>
                                                             <span className="font-semibold text-red-600">
-                                                                {(item.productVariant.promotionPrice || 0).toLocaleString('vi-VN')} ₫
+                                                                {(item?.unitPrice || 0).toLocaleString('vi-VN')} ₫
                                                             </span>
                                                         </div>
                                                         <span className="text-sm text-gray-500 line-through">
-                                                            {(item.productVariant.price || item.unitPrice || 0).toLocaleString('vi-VN')} ₫
+                                                            {(item?.productVariant?.price || 0).toLocaleString('vi-VN')} ₫
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -289,14 +289,14 @@ const AdminOrderDetailPage: React.FC = () => {
                                                 )}
                                             </td>
                                             <td className="p-2 text-right font-semibold">
-                                                {item.productVariant?.promotionPrice != null && 
-                                                 item.productVariant.promotionPrice < item.productVariant.price ? (
+                                                {item?.productVariant?.promotionPrice != null && 
+                                                 item?.productVariant?.promotionPrice < item?.productVariant?.price ? (
                                                     <div className="flex flex-col items-end gap-1">
                                                         <span className="text-red-600">
-                                                            {((item.productVariant.promotionPrice || 0) * (item.quantity || 0)).toLocaleString('vi-VN')} ₫
+                                                            {((item?.productVariant?.promotionPrice || 0) * (item.quantity || 0)).toLocaleString('vi-VN')} ₫
                                                         </span>
                                                         <span className="text-sm text-gray-500 line-through font-normal">
-                                                            {((item.productVariant.price || item.unitPrice || 0) * (item.quantity || 0)).toLocaleString('vi-VN')} ₫
+                                                            {((item?.productVariant?.price || item.unitPrice || 0) * (item.quantity || 0)).toLocaleString('vi-VN')} ₫
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -319,9 +319,9 @@ const AdminOrderDetailPage: React.FC = () => {
                     <Card>
                         <CardHeader><CardTitle>Thanh toán</CardTitle></CardHeader>
                         <CardContent className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span>Tạm tính:</span> <span>{subtotal.toLocaleString('vi-VN')} ₫</span></div>
+                            <div className="flex justify-between"><span>Tạm tính:</span> <span>{(subtotal + (order.discountAmount || 0)).toLocaleString('vi-VN')} ₫</span></div>
                             <div className="flex justify-between"><span>Phí vận chuyển:</span> <span>{(order.shippingCost || 0).toLocaleString('vi-VN')} ₫</span></div>
-                            <div className="flex justify-between"><span>Giảm giá:</span> <span>- 0 ₫</span></div>
+                            <div className="flex justify-between"><span>Giảm giá:</span> <span>- {order.discountAmount.toLocaleString('vi-VN')} ₫</span></div>
                             <div className="flex justify-between font-bold text-base border-t pt-2 mt-2"><span>Tổng cộng:</span> <span>{order.totalAmount.toLocaleString('vi-VN')} ₫</span></div>
                              <div className="flex items-center gap-2 pt-2"><CreditCard size={16} className="text-gray-500"/> <span>Thanh toán qua {order.paymentMethod}</span></div>
                         </CardContent>

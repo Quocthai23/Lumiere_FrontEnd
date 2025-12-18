@@ -94,7 +94,32 @@ interface CartItemProps {
     onRemove: (variantId: number) => void | Promise<void>;
     onUpdateQuantity: (variantId: number, newQuantity: number) => void | Promise<void>;
 }
-const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => (
+const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => {
+    // Helper function để lấy giá đúng (ưu tiên promotionPrice nếu có và nhỏ hơn price)
+    const getEffectivePrice = (): number => {
+        const promotionPrice = typeof item.variant.promotionPrice === 'string' 
+            ? parseFloat(item.variant.promotionPrice) 
+            : item.variant.promotionPrice;
+        const price = typeof item.variant.price === 'string' 
+            ? parseFloat(item.variant.price) 
+            : item.variant.price;
+        
+        if (promotionPrice != null && promotionPrice > 0 && promotionPrice < price) {
+            return promotionPrice;
+        }
+        return price;
+    };
+
+    const effectivePrice = getEffectivePrice();
+    const promotionPrice = typeof item.variant.promotionPrice === 'string' 
+        ? parseFloat(item.variant.promotionPrice) 
+        : item.variant.promotionPrice;
+    const price = typeof item.variant.price === 'string' 
+        ? parseFloat(item.variant.price) 
+        : item.variant.price;
+    const hasPromotion = promotionPrice != null && promotionPrice > 0 && promotionPrice < price;
+
+    return (
     <div className="flex items-start bg-white p-4 rounded-xl shadow-sm border hover:shadow-md transition-shadow duration-300">
         <Link to={`/products/${item?.product?.slug}`} className="flex-shrink-0">
             <img 
@@ -114,24 +139,23 @@ const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantit
             </Link>
             <p className="text-sm text-gray-500 mt-1">{item.variant.name.replace(item.product.name + " - ", "")}</p>
             <div className="my-3">
-              {item.variant.promotionPrice != null && 
-               item.variant.promotionPrice < item.variant.price ? (
+              {hasPromotion ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
                     FLASH SALE
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-indigo-600 font-semibold text-md text-red-600">
-                      {item.variant.promotionPrice.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                    <span className="text-red-600 font-semibold text-md">
+                      {promotionPrice.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
-                      {item.variant.price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                      {price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
                     </span>
                   </div>
                 </div>
               ) : (
                 <p className="text-indigo-600 font-semibold text-md">
-                  {item.variant.price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                  {price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
                 </p>
               )}
             </div>
@@ -157,16 +181,15 @@ const CartItemCard: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantit
         </div>
         <div className="flex flex-col items-end justify-between h-full ml-4">
             <p className="font-bold text-lg text-gray-900">
-                {((item.variant.promotionPrice != null && item.variant.promotionPrice < item.variant.price 
-                  ? item.variant.promotionPrice 
-                  : item.variant.price) * item.quantity).toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                {(effectivePrice * item.quantity).toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
             </p>
             <button onClick={() => onRemove(item.variant.id)} className="text-gray-400 hover:text-red-500 transition-colors mt-auto" title="Xóa sản phẩm">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>
     </div>
-);
+    );
+};
 
 const EmptyCart: React.FC = () => (
     <div className="text-center py-20 bg-gray-50 rounded-xl">
@@ -180,7 +203,7 @@ const EmptyCart: React.FC = () => (
 );
 
 const CartPage: React.FC = () => {
-    const { cartItems, removeFromCart, updateQuantity, cartCount, subtotal, discount, totalPrice, applyVoucher, applyVoucherWithDiscount, removeVoucher, appliedVoucher } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, cartCount, subtotal, discount, totalPrice, applyVoucherWithDiscount, removeVoucher, appliedVoucher } = useCart();
     const { isAuthenticated } = useAuth();
     const [voucherCode, setVoucherCode] = useState('');
     const [voucherMessage, setVoucherMessage] = useState({ type: 'success' as 'success' | 'error', text: '' });
@@ -237,8 +260,13 @@ const CartPage: React.FC = () => {
         setVoucherMessage({ type: 'success', text: '' });
 
         try {
-            // Tính subtotal hiện tại
-            const currentSubtotal = cartItems.reduce((total, item) => total + item?.variant?.price * item?.quantity, 0);
+            // Tính subtotal hiện tại (theo promotionPrice nếu có)
+            const currentSubtotal = cartItems.reduce((total, item) => {
+                const itemPrice = (item?.variant?.promotionPrice != null && item?.variant?.promotionPrice < item?.variant?.price)
+                    ? item.variant.promotionPrice
+                    : item?.variant?.price;
+                return total + itemPrice * item?.quantity;
+            }, 0);
 
             // Gọi API tính giảm giá
             const request: VoucherCalculateRequestDTO = {
@@ -377,10 +405,6 @@ const CartPage: React.FC = () => {
                                 <span className="font-medium">- {discount.toLocaleString('vi-VN')} VND</span>
                             </div>
                          )}
-                        <div className="flex justify-between">
-                            <span>Phí vận chuyển</span>
-                            <span className="font-medium text-gray-800">Miễn phí</span>
-                        </div>
                     </div>
                     
                     <div className="my-6 border-t border-dashed"></div>

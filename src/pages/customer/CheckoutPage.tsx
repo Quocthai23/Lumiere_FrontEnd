@@ -198,13 +198,31 @@ const CheckoutPage: React.FC = () => {
       
       // Nếu chưa đăng nhập, sử dụng endpoint guest order
       if (!isAuthenticated()) {
+        // Helper function để lấy giá đúng (ưu tiên promotionPrice nếu có và nhỏ hơn price)
+        const getEffectivePrice = (variant: typeof cartItems[0]['variant']): number => {
+          const promotionPrice = typeof variant.promotionPrice === 'string' 
+            ? parseFloat(variant.promotionPrice) 
+            : variant.promotionPrice;
+          const price = typeof variant.price === 'string' 
+            ? parseFloat(variant.price) 
+            : variant.price;
+          
+          if (promotionPrice != null && promotionPrice > 0 && promotionPrice < price) {
+            return promotionPrice;
+          }
+          return price;
+        };
+
         // Chuyển đổi cartItems sang format GuestCartItemDTO
-        const guestCartItems = cartItems.map(item => ({
-          variantId: item.variant.id,
-          quantity: item.quantity,
-          unitPrice: item.variant.price,
-          totalPrice: item.variant.price * item.quantity
-        }));
+        const guestCartItems = cartItems.map(item => {
+          const effectivePrice = getEffectivePrice(item.variant);
+          return {
+            variantId: item.variant.id,
+            quantity: item.quantity,
+            unitPrice: effectivePrice,
+            totalPrice: effectivePrice * item.quantity
+          };
+        });
 
         const guestOrderPayload = {
           cartItems: guestCartItems,
@@ -462,15 +480,64 @@ const CheckoutPage: React.FC = () => {
           )}
 
           <div className="space-y-4">
-            {cartItems.map(item => (
-              <div key={item.variant.id} className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{item.product.name}</p>
-                  <p className="text-sm text-gray-500">{item.variant.name.replace(item.product.name + " - ", "")} x {item.quantity}</p>
+            {cartItems.map(item => {
+              // Helper function để lấy giá đúng (ưu tiên promotionPrice nếu có và nhỏ hơn price)
+              const getEffectivePrice = (): number => {
+                const promotionPrice = typeof item.variant.promotionPrice === 'string' 
+                  ? parseFloat(item.variant.promotionPrice) 
+                  : item.variant.promotionPrice;
+                const price = typeof item.variant.price === 'string' 
+                  ? parseFloat(item.variant.price) 
+                  : item.variant.price;
+                
+                if (promotionPrice != null && promotionPrice > 0 && promotionPrice < price) {
+                  return promotionPrice;
+                }
+                return price;
+              };
+
+              const effectivePrice = getEffectivePrice();
+              const promotionPrice = typeof item.variant.promotionPrice === 'string' 
+                ? parseFloat(item.variant.promotionPrice) 
+                : item.variant.promotionPrice;
+              const price = typeof item.variant.price === 'string' 
+                ? parseFloat(item.variant.price) 
+                : item.variant.price;
+              const hasPromotion = promotionPrice != null && promotionPrice > 0 && promotionPrice < price;
+              const totalPrice = effectivePrice * item.quantity;
+
+              return (
+                <div key={item.variant.id} className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="font-semibold">{item.product.name}</p>
+                    <p className="text-sm text-gray-500">{item.variant.name.replace(item.product.name + " - ", "")} x {item.quantity}</p>
+                    {hasPromotion && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                          FLASH SALE
+                        </span>
+                        <span className="text-xs text-gray-500 line-through">
+                          {price.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                        </span>
+                        <span className="text-xs text-red-600 font-semibold">
+                          {promotionPrice.toLocaleString('vi-VN')} {item.variant.currency || 'VND'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right ml-4">
+                    {hasPromotion ? (
+                      <div>
+                        <p className="font-medium text-red-600">{totalPrice.toLocaleString('vi-VN')} VND</p>
+                        <p className="text-xs text-gray-400 line-through">{(price * item.quantity).toLocaleString('vi-VN')} VND</p>
+                      </div>
+                    ) : (
+                      <p className="font-medium">{totalPrice.toLocaleString('vi-VN')} VND</p>
+                    )}
+                  </div>
                 </div>
-                <p className="font-medium">{(item.variant.price * item.quantity).toLocaleString('vi-VN')} VND</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <hr className="my-4" />
           <div className="space-y-2">

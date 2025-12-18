@@ -40,6 +40,7 @@ const OrderManagementPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -78,6 +79,55 @@ const OrderManagementPage: React.FC = () => {
                 );
             });
     }, [orders, activeTab, searchTerm]);
+
+    const handleExportOrders = async () => {
+        setIsExporting(true);
+        try {
+            const token = localStorage.getItem('accessToken');
+            const baseUrl = 'http://localhost:8080/api';
+            const response = await fetch(`${baseUrl}/orders/export`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            
+            // Lấy tên file từ header (nếu có)
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `danh_sach_don_hang_${new Date().toISOString().split('T')[0]}.xlsx`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/i);
+                if (filenameMatch) {
+                    filename = decodeURIComponent(filenameMatch[1]);
+                } else {
+                    const filenameMatch2 = contentDisposition.match(/filename="?(.+)"?/i);
+                    if (filenameMatch2) {
+                        filename = filenameMatch2[1];
+                    }
+                }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert('Không thể xuất file đơn hàng.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
     
     const TABS = ['All', 'PENDING', 'PROCESSING', 'SHIPPING', 'COMPLETED', 'CANCELLED'];
 
@@ -90,9 +140,13 @@ const OrderManagementPage: React.FC = () => {
                         <ListFilter className="h-4 w-4" />
                         <span>Lọc</span>
                     </button>
-                    <button className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm hover:bg-gray-50">
+                    <button 
+                        onClick={handleExportOrders}
+                        disabled={isExporting}
+                        className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         <File className="h-4 w-4" />
-                        <span>Xuất file</span>
+                        <span>{isExporting ? 'Đang xuất...' : 'Xuất file'}</span>
                     </button>
                 </div>
             </div>

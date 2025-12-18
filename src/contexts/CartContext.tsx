@@ -330,7 +330,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Nhưng thực tế CartPage sẽ gọi API calculate và dùng applyVoucherWithDiscount
       if (code.toUpperCase() === 'LUMIERE10') {
         // Logic cũ - tính theo percentage
-        const currentSubtotal = cartItems.reduce((total, item) => total + item?.variant?.price * item?.quantity, 0);
+        const currentSubtotal = cartItems.reduce((total, item) => {
+          const itemPrice = (item?.variant?.promotionPrice != null && item?.variant?.promotionPrice < item?.variant?.price)
+            ? item.variant.promotionPrice
+            : item?.variant?.price;
+          return total + itemPrice * item?.quantity;
+        }, 0);
         const discountAmount = (currentSubtotal * 10) / 100;
         const voucherData: Voucher = { 
           id: 0,
@@ -373,7 +378,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const subtotal = cartItems.reduce((total, item) => total + item?.variant?.price * item?.quantity, 0);
+  const subtotal = cartItems.reduce((total, item) => {
+    const itemPrice = (item?.variant?.promotionPrice != null && item?.variant?.promotionPrice < item?.variant?.price)
+      ? item.variant.promotionPrice
+      : item?.variant?.price;
+    return total + itemPrice * item?.quantity;
+  }, 0);
   const discount = voucherDiscountAmount; // Dùng discount amount từ API
   const pointsDiscount = redeemedPoints * 1000;
   const totalPrice = Math.max(0, subtotal - discount - pointsDiscount);
