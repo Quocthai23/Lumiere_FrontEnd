@@ -165,7 +165,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
                     active: true
                 }));
                 const createdList = await httpClient.post<OptionSelectDTO[]>('/option-selects/bulk', items);
-                setSelects(prev => ({ ...prev, [created.id!]: [ ...(prev[created.id!] || []), ...(createdList || []) ] }));
+                setSelects(prev => ({ ...prev, [created.id!]: [...(prev[created.id!] || []), ...(createdList || [])] }));
             } else {
                 setSelects(prev => ({ ...prev, [created.id!]: [] }));
             }
@@ -192,7 +192,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
                     active: true
                 }));
                 const createdList = await httpClient.post<OptionSelectDTO[]>('/option-selects/bulk', items);
-                setSelects(prev => ({ ...prev, [data.id!]: [ ...(prev[data.id!] || []), ...(createdList || []) ] }));
+                setSelects(prev => ({ ...prev, [data.id!]: [...(prev[data.id!] || []), ...(createdList || [])] }));
             }
         }
 
@@ -205,10 +205,16 @@ export default function OptionGroupManager({ productId }: { productId: number })
     };
     const deleteGroup = async () => {
         if (!deleteConfirm.open || deleteConfirm.type !== 'group') return;
-        await httpClient.delete(`/option-groups/${deleteConfirm.id}`);
-        setGroups(list => list.filter(g => g.id !== deleteConfirm.id));
-        setSelects(s => { const t = { ...s }; delete t[deleteConfirm.id]; return t; });
-        setDeleteConfirm({ open: false });
+        try {
+            await httpClient.delete(`/option-groups/${deleteConfirm.id}`);
+            setGroups(list => list.filter(g => g.id !== deleteConfirm.id));
+            setSelects(s => { const t = { ...s }; delete t[deleteConfirm.id]; return t; });
+        } catch (e) {
+            console.error('Failed to delete group', e);
+            alert('Không thể xóa nhóm thuộc tính. Vui lòng thử lại sau!');
+        } finally {
+            setDeleteConfirm({ open: false });
+        }
     };
 
     /** ===== Select CRUD (single) ===== */
@@ -239,7 +245,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
                 position: ((selects[groupId]?.length) || 0) + 1,
                 active: true
             });
-            setSelects(prev => ({ ...prev, [groupId]: [ ...(prev[groupId] || []), created ] }));
+            setSelects(prev => ({ ...prev, [groupId]: [...(prev[groupId] || []), created] }));
         } else {
             const updated = await httpClient.put<OptionSelectDTO>(`/option-selects/${data.id}`, {
                 ...data,
@@ -259,10 +265,16 @@ export default function OptionGroupManager({ productId }: { productId: number })
     };
     const deleteSelect = async () => {
         if (!deleteConfirm.open || deleteConfirm.type !== 'select') return;
-        await httpClient.delete(`/option-selects/${deleteConfirm.id}`);
-        const gid = deleteConfirm.groupId!;
-        setSelects(prev => ({ ...prev, [gid]: (prev[gid] || []).filter(x => x.id !== deleteConfirm.id) }));
-        setDeleteConfirm({ open: false });
+        try {
+            await httpClient.delete(`/option-selects/${deleteConfirm.id}`);
+            const gid = deleteConfirm.groupId!;
+            setSelects(prev => ({ ...prev, [gid]: (prev[gid] || []).filter(x => x.id !== deleteConfirm.id) }));
+        } catch (e) {
+            console.error('Failed to delete select', e);
+            alert('Không thể xóa lựa chọn này. Vui lòng thử lại sau!');
+        } finally {
+            setDeleteConfirm({ open: false });
+        }
     };
 
     /** ===== Auto split from variants + SYNC mixes ===== */
@@ -280,12 +292,13 @@ export default function OptionGroupManager({ productId }: { productId: number })
             }
 
             // 3) gọi API sync
-             await httpClient.post<SyncMixResult>(
+            await httpClient.post<SyncMixResult>(
                 `/option-variants/products/${productId}/variants/sync-by-groups`,
                 payload
             );
 
             await fetchGroups();
+            window.location.reload();
 
         } catch (e) {
             console.error(e);
@@ -297,7 +310,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
     const addNewSelectName = (raw: string) => {
         const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
         if (!parts.length) return;
-        setGroupModal(m => m.open ? ({ ...m, newSelectNames: Array.from(new Set([ ...m.newSelectNames, ...parts ])) }) : m);
+        setGroupModal(m => m.open ? ({ ...m, newSelectNames: Array.from(new Set([...m.newSelectNames, ...parts])) }) : m);
     };
     const removeNewSelectName = (name: string) => {
         setGroupModal(m => m.open ? ({ ...m, newSelectNames: m.newSelectNames.filter(x => x !== name) }) : m);
@@ -435,15 +448,15 @@ export default function OptionGroupManager({ productId }: { productId: number })
                                     <div className="mt-2 flex flex-wrap gap-2">
                                         {groupModal.newSelectNames.map(n => (
                                             <span key={n} className="px-2 py-1 rounded border text-sm flex items-center gap-1">
-                        {n}
+                                                {n}
                                                 <button
                                                     className="text-red-600 text-xs"
                                                     onClick={() => removeNewSelectName(n)}
                                                     title="Xoá"
                                                 >
-                          ✕
-                        </button>
-                      </span>
+                                                    ✕
+                                                </button>
+                                            </span>
                                         ))}
                                     </div>
                                 )}

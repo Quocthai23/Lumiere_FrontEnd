@@ -51,11 +51,14 @@ const RegisterPage: React.FC = () => {
                 navigate('/login');
             }, 1000);
         } catch (err: any) {
-            if (err.response && err.response.data) {
-                const { errorKey, title } = err.response.data;
-                if (errorKey === 'userexists') {
+            console.error("Lỗi đăng ký:", err, "Data:", err.data);
+            if (err.data) {
+                const { message, title, fieldErrors, type } = err.data;
+                if (fieldErrors && fieldErrors.length > 0) {
+                    setError(`Lỗi trường: ${fieldErrors[0].field} - ${fieldErrors[0].message}`);
+                } else if (message === 'error.userexists' || type?.includes('login-already-used')) {
                     setError('Tên đăng nhập đã tồn tại.');
-                } else if (errorKey === 'emailexists') {
+                } else if (message === 'error.emailexists' || type?.includes('email-already-used')) {
                     setError('Email đã được sử dụng.');
                 } else {
                     setError(title || 'Đã có lỗi xảy ra. Vui lòng thử lại.');
@@ -63,7 +66,6 @@ const RegisterPage: React.FC = () => {
             } else {
                 setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
             }
-            console.error("Lỗi đăng ký:", err);
         } finally {
             setIsLoading(false);
         }

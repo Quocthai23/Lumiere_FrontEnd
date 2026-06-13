@@ -20,12 +20,12 @@ type OptionSelectDTO = {
 };
 
 type GroupModalState =
-    | { open: false }
-    | { open: true; mode: 'create' | 'edit'; data: OptionGroupDTO; newSelectNames: string[] };
+  | { open: false }
+  | { open: true; mode: 'create' | 'edit'; data: OptionGroupDTO; newSelectNames: string[] };
 
 type SelectModalState =
-    | { open: false }
-    | { open: true; mode: 'create' | 'edit'; groupId: number; data: OptionSelectDTO };
+  | { open: false }
+  | { open: true; mode: 'create' | 'edit'; groupId: number; data: OptionSelectDTO };
 
 type GroupSelectReq = { groupId: number; selectIds: number[] };
 type SyncMixResult = {
@@ -37,9 +37,9 @@ type SyncMixResult = {
 /** ===== Helpers ===== */
 function toCodeFromName(name: string): string {
   const slug = name
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '').replace(/-+/g, '-');
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '').replace(/-+/g, '-');
   return slug.toUpperCase() || 'OPT';
 }
 
@@ -58,17 +58,17 @@ async function fetchGroupsSnapshot(productId: number): Promise<{
 }
 
 function buildGroupSelectPayload(
-    groupsSnap: OptionGroupDTO[],
-    selectsSnap: Record<number, OptionSelectDTO[]>
+  groupsSnap: OptionGroupDTO[],
+  selectsSnap: Record<number, OptionSelectDTO[]>
 ): GroupSelectReq[] {
   const ordered = [...groupsSnap].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const payload: GroupSelectReq[] = [];
   for (const g of ordered) {
     const list = selectsSnap[g.id!] || [];
     const activeIds = list
-        .filter(s => s.active !== false) // null/undefined coi như active
-        .map(s => s.id!)
-        .filter(Boolean);
+      .filter(s => s.active !== false) // null/undefined coi như active
+      .map(s => s.id!)
+      .filter(Boolean);
     if (activeIds.length) payload.push({ groupId: g.id!, selectIds: activeIds });
   }
   return payload;
@@ -86,7 +86,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
   const [groupModal, setGroupModal] = useState<GroupModalState>({ open: false });
   const [selectModal, setSelectModal] = useState<SelectModalState>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<
-      { open: false } | { open: true; type: 'group' | 'select'; id: number; groupId?: number }
+    { open: false } | { open: true; type: 'group' | 'select'; id: number; groupId?: number }
   >({ open: false });
 
   const filteredGroups = useMemo(() => {
@@ -158,7 +158,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
           active: true
         }));
         const createdList = await httpClient.post<OptionSelectDTO[]>('/option-selects/bulk', items);
-        setSelects(prev => ({ ...prev, [created.id!]: [ ...(prev[created.id!] || []), ...(createdList || []) ] }));
+        setSelects(prev => ({ ...prev, [created.id!]: [...(prev[created.id!] || []), ...(createdList || [])] }));
       } else {
         setSelects(prev => ({ ...prev, [created.id!]: [] }));
       }
@@ -185,7 +185,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
           active: true
         }));
         const createdList = await httpClient.post<OptionSelectDTO[]>('/option-selects/bulk', items);
-        setSelects(prev => ({ ...prev, [data.id!]: [ ...(prev[data.id!] || []), ...(createdList || []) ] }));
+        setSelects(prev => ({ ...prev, [data.id!]: [...(prev[data.id!] || []), ...(createdList || [])] }));
       }
     }
 
@@ -232,7 +232,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
         position: ((selects[groupId]?.length) || 0) + 1,
         active: true
       });
-      setSelects(prev => ({ ...prev, [groupId]: [ ...(prev[groupId] || []), created ] }));
+      setSelects(prev => ({ ...prev, [groupId]: [...(prev[groupId] || []), created] }));
     } else {
       const updated = await httpClient.put<OptionSelectDTO>(`/option-selects/${data.id}`, {
         ...data,
@@ -265,7 +265,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
 
       // 1) fetch variants of product
       const variants: Array<{ id: number; name: string; sku: string }> =
-          (await httpClient.get(`/product-variants?productId.equals=${productId}&sort=id,asc`)) || [];
+        (await httpClient.get(`/product-variants?productId.equals=${productId}&sort=id,asc`)) || [];
 
       if (!variants.length) {
         alert('Không tìm thấy biến thể nào để phân tích.');
@@ -287,7 +287,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
       const maxCols = Math.max(...rows.map(r => r.length));
 
       // 3) ensure enough groups by position
-      const sortedGroups = [...groups].sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
+      const sortedGroups = [...groups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
       const need = Math.max(0, maxCols - sortedGroups.length);
       const createdGroups: OptionGroupDTO[] = [];
       for (let i = 0; i < need; i++) {
@@ -300,7 +300,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
         });
         createdGroups.push(g);
       }
-      const allGroups = [...sortedGroups, ...createdGroups].sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
+      const allGroups = [...sortedGroups, ...createdGroups].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
       // 4) collect unique values per column
       const uniqueByCol: Record<number, Set<string>> = {};
@@ -351,16 +351,17 @@ export default function OptionGroupManager({ productId }: { productId: number })
       }
 
       const res = await httpClient.post<SyncMixResult>(
-          `/products/${productId}/variants/sync-by-groups`,
-          payload
+        `/products/${productId}/variants/sync-by-groups`,
+        payload
       );
 
       alert(
-          `Đã chia & đồng bộ biến thể:\n` +
-          `+ Tạo mới: ${res.createdVariantIds.length}\n` +
-          `+ Xoá: ${res.deletedVariantIds.length}\n` +
-          `+ Giữ nguyên: ${res.keptVariantIds.length}`
+        `Đã chia & đồng bộ biến thể:\n` +
+        `+ Tạo mới: ${res.createdVariantIds.length}\n` +
+        `+ Xoá: ${res.deletedVariantIds.length}\n` +
+        `+ Giữ nguyên: ${res.keptVariantIds.length}`
       );
+      window.location.reload();
     } catch (e) {
       console.error(e);
       alert('Không thể chia phân loại. Kiểm tra lại dữ liệu biến thể.');
@@ -372,7 +373,7 @@ export default function OptionGroupManager({ productId }: { productId: number })
   const addNewSelectName = (raw: string) => {
     const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
     if (!parts.length) return;
-    setGroupModal(m => m.open ? ({ ...m, newSelectNames: Array.from(new Set([ ...m.newSelectNames, ...parts ])) }) : m);
+    setGroupModal(m => m.open ? ({ ...m, newSelectNames: Array.from(new Set([...m.newSelectNames, ...parts])) }) : m);
   };
   const removeNewSelectName = (name: string) => {
     setGroupModal(m => m.open ? ({ ...m, newSelectNames: m.newSelectNames.filter(x => x !== name) }) : m);
@@ -380,230 +381,230 @@ export default function OptionGroupManager({ productId }: { productId: number })
 
   /** ===== Render ===== */
   return (
-      <div className="space-y-4">
-        {/* Toolbar */}
-        <div className="rounded-xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50 p-3 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[220px] max-w-[420px]">
-              <input
-                  placeholder="Tìm nhóm..."
-                  value={kw}
-                  onChange={e => setKw(e.target.value)}
-                  className="h-10 w-full rounded-full border border-gray-200 px-4 pr-10 text-sm placeholder:text-gray-400
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="rounded-xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50 p-3 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[220px] max-w-[420px]">
+            <input
+              placeholder="Tìm nhóm..."
+              value={kw}
+              onChange={e => setKw(e.target.value)}
+              className="h-10 w-full rounded-full border border-gray-200 px-4 pr-10 text-sm placeholder:text-gray-400
                          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-              />
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">⌕</span>
-            </div>
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">⌕</span>
+          </div>
 
-            {/* Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                  onClick={autoSplitFromVariants}
-                  disabled={working}
-                  className="h-10 rounded-full bg-emerald-600 px-4 text-white text-sm font-medium shadow-sm
+          {/* Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={autoSplitFromVariants}
+              disabled={working}
+              className="h-10 rounded-full bg-emerald-600 px-4 text-white text-sm font-medium shadow-sm
                          hover:bg-emerald-700 hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500
                          disabled:bg-emerald-300 transition"
-                  title="Phân tích tên biến thể và tự tạo nhóm/lựa chọn + đồng bộ mix"
-              >
-                {working ? 'Đang chia…' : 'Chia phân loại'}
-              </button>
-              <button
-                  onClick={openCreateGroup}
-                  className="h-10 rounded-full bg-indigo-600 px-4 text-white text-sm font-medium shadow-sm
+              title="Phân tích tên biến thể và tự tạo nhóm/lựa chọn + đồng bộ mix"
+            >
+              {working ? 'Đang chia…' : 'Chia phân loại'}
+            </button>
+            <button
+              onClick={openCreateGroup}
+              className="h-10 rounded-full bg-indigo-600 px-4 text-white text-sm font-medium shadow-sm
                          hover:bg-indigo-700 hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              >
-                + Thêm nhóm
+            >
+              + Thêm nhóm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <p>Đang tải...</p>
+      ) : filteredGroups.length === 0 ? (
+        <p className="text-gray-500">Chưa có nhóm.</p>
+      ) : (
+        <div className="space-y-4">
+          {filteredGroups.map(g => (
+            <div key={g.id} className="border rounded-xl shadow-sm bg-white">
+              {/* Group header */}
+              <div className="p-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-gray-800">
+                    {g.name} <span className="text-xs text-gray-500">({g.code})</span>
+                  </div>
+                  {typeof g.position === 'number' && (
+                    <div className="text-[11px] text-gray-400 mt-0.5">Pos: {g.position}</div>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => openEditGroup(g)} className="text-indigo-600 hover:underline">Sửa</button>
+                  <button onClick={() => confirmDeleteGroup(g.id)} className="text-red-600 hover:underline">Xoá</button>
+                </div>
+              </div>
+
+              {/* Select list */}
+              <div className="p-3 border-t">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-gray-700 tracking-wide">Lựa chọn</div>
+                  <button
+                    onClick={() => openCreateSelect(g.id!)}
+                    className="text-xs md:text-sm h-8 rounded-full px-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition"
+                  >
+                    + Thêm lựa chọn
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {(selects[g.id!] || []).map(s => (
+                    <div
+                      key={s.id}
+                      className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm"
+                    >
+                      <span className="font-mono text-gray-700">{s.code}</span>
+                      <span className="text-gray-700">— {s.name}</span>
+                      <button onClick={() => openEditSelect(s)} className="text-indigo-600 text-xs hover:underline">Sửa</button>
+                      <button onClick={() => confirmDeleteSelect(s)} className="text-red-600 text-xs hover:underline">Xoá</button>
+                    </div>
+                  ))}
+                  {(selects[g.id!] || []).length === 0 && (
+                    <div className="text-gray-500 text-sm">Chưa có lựa chọn.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ===== Modal: Group Create/Edit ===== */}
+      {groupModal.open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-lg rounded-lg shadow-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">
+                {groupModal.mode === 'create' ? 'Thêm nhóm thuộc tính' : 'Sửa nhóm thuộc tính'}
+              </h3>
+              <button onClick={() => setGroupModal({ open: false })} className="text-gray-500 hover:text-gray-700">Đóng</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Tên nhóm</label>
+                <input
+                  value={groupModal.data.name}
+                  onChange={e => setGroupModal(m => m.open ? ({ ...m, data: { ...m.data, name: e.target.value } }) : m)}
+                  className="border rounded px-2 py-1 w-full"
+                />
+                {groupModal.mode === 'edit' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Mã: <span className="font-mono">{groupModal.data.code}</span> (tự sinh, không chỉnh sửa)
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Thêm lựa chọn trong nhóm</label>
+                <QuickAddSelectNames onAdd={(names) => addNewSelectName(names)} />
+                {groupModal.newSelectNames.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {groupModal.newSelectNames.map(n => (
+                      <span key={n} className="px-2 py-1 rounded border text-sm flex items-center gap-1">
+                        {n}
+                        <button
+                          className="text-red-600 text-xs"
+                          onClick={() => removeNewSelectName(n)}
+                          title="Xoá"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Nhập nhiều bằng dấu phẩy, Enter để thêm.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setGroupModal({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                Hủy
+              </button>
+              <button onClick={saveGroup} className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Lưu
               </button>
             </div>
           </div>
         </div>
+      )}
 
-        {loading ? (
-            <p>Đang tải...</p>
-        ) : filteredGroups.length === 0 ? (
-            <p className="text-gray-500">Chưa có nhóm.</p>
-        ) : (
-            <div className="space-y-4">
-              {filteredGroups.map(g => (
-                  <div key={g.id} className="border rounded-xl shadow-sm bg-white">
-                    {/* Group header */}
-                    <div className="p-3 flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-gray-800">
-                          {g.name} <span className="text-xs text-gray-500">({g.code})</span>
-                        </div>
-                        {typeof g.position === 'number' && (
-                            <div className="text-[11px] text-gray-400 mt-0.5">Pos: {g.position}</div>
-                        )}
-                      </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => openEditGroup(g)} className="text-indigo-600 hover:underline">Sửa</button>
-                        <button onClick={() => confirmDeleteGroup(g.id)} className="text-red-600 hover:underline">Xoá</button>
-                      </div>
-                    </div>
-
-                    {/* Select list */}
-                    <div className="p-3 border-t">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-semibold text-gray-700 tracking-wide">Lựa chọn</div>
-                        <button
-                            onClick={() => openCreateSelect(g.id!)}
-                            className="text-xs md:text-sm h-8 rounded-full px-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition"
-                        >
-                          + Thêm lựa chọn
-                        </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {(selects[g.id!] || []).map(s => (
-                            <div
-                                key={s.id}
-                                className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm"
-                            >
-                              <span className="font-mono text-gray-700">{s.code}</span>
-                              <span className="text-gray-700">— {s.name}</span>
-                              <button onClick={() => openEditSelect(s)} className="text-indigo-600 text-xs hover:underline">Sửa</button>
-                              <button onClick={() => confirmDeleteSelect(s)} className="text-red-600 text-xs hover:underline">Xoá</button>
-                            </div>
-                        ))}
-                        {(selects[g.id!] || []).length === 0 && (
-                            <div className="text-gray-500 text-sm">Chưa có lựa chọn.</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-              ))}
+      {/* ===== Modal: Select Create/Edit ===== */}
+      {selectModal.open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-lg rounded-lg shadow-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">
+                {selectModal.mode === 'create' ? 'Thêm lựa chọn' : 'Sửa lựa chọn'}
+              </h3>
+              <button onClick={() => setSelectModal({ open: false })} className="text-gray-500 hover:text-gray-700">Đóng</button>
             </div>
-        )}
 
-        {/* ===== Modal: Group Create/Edit ===== */}
-        {groupModal.open && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-              <div className="bg-white w-full max-w-lg rounded-lg shadow-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">
-                    {groupModal.mode === 'create' ? 'Thêm nhóm thuộc tính' : 'Sửa nhóm thuộc tính'}
-                  </h3>
-                  <button onClick={() => setGroupModal({ open: false })} className="text-gray-500 hover:text-gray-700">Đóng</button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1">Tên nhóm</label>
-                    <input
-                        value={groupModal.data.name}
-                        onChange={e => setGroupModal(m => m.open ? ({ ...m, data: { ...m.data, name: e.target.value } }) : m)}
-                        className="border rounded px-2 py-1 w-full"
-                    />
-                    {groupModal.mode === 'edit' && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Mã: <span className="font-mono">{groupModal.data.code}</span> (tự sinh, không chỉnh sửa)
-                        </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1">Thêm lựa chọn trong nhóm</label>
-                    <QuickAddSelectNames onAdd={(names) => addNewSelectName(names)} />
-                    {groupModal.newSelectNames.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {groupModal.newSelectNames.map(n => (
-                              <span key={n} className="px-2 py-1 rounded border text-sm flex items-center gap-1">
-                        {n}
-                                <button
-                                    className="text-red-600 text-xs"
-                                    onClick={() => removeNewSelectName(n)}
-                                    title="Xoá"
-                                >
-                          ✕
-                        </button>
-                      </span>
-                          ))}
-                        </div>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">Nhập nhiều bằng dấu phẩy, Enter để thêm.</p>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex justify-end gap-2">
-                  <button onClick={() => setGroupModal({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                    Hủy
-                  </button>
-                  <button onClick={saveGroup} className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                    Lưu
-                  </button>
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Tên lựa chọn</label>
+                <input
+                  value={selectModal.data.name}
+                  onChange={e => setSelectModal(m => m.open ? ({ ...m, data: { ...m.data, name: e.target.value } }) : m)}
+                  className="border rounded px-2 py-1 w-full"
+                />
               </div>
+              {selectModal.mode === 'edit' && (
+                <p className="text-xs text-gray-500">
+                  Mã: <span className="font-mono">{selectModal.data.code}</span> (tự sinh, không chỉnh sửa)
+                </p>
+              )}
             </div>
-        )}
 
-        {/* ===== Modal: Select Create/Edit ===== */}
-        {selectModal.open && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-              <div className="bg-white w-full max-w-lg rounded-lg shadow-xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">
-                    {selectModal.mode === 'create' ? 'Thêm lựa chọn' : 'Sửa lựa chọn'}
-                  </h3>
-                  <button onClick={() => setSelectModal({ open: false })} className="text-gray-500 hover:text-gray-700">Đóng</button>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1">Tên lựa chọn</label>
-                    <input
-                        value={selectModal.data.name}
-                        onChange={e => setSelectModal(m => m.open ? ({ ...m, data: { ...m.data, name: e.target.value } }) : m)}
-                        className="border rounded px-2 py-1 w-full"
-                    />
-                  </div>
-                  {selectModal.mode === 'edit' && (
-                      <p className="text-xs text-gray-500">
-                        Mã: <span className="font-mono">{selectModal.data.code}</span> (tự sinh, không chỉnh sửa)
-                      </p>
-                  )}
-                </div>
-
-                <div className="mt-5 flex justify-end gap-2">
-                  <button onClick={() => setSelectModal({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                    Hủy
-                  </button>
-                  <button onClick={saveSelect} className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                    Lưu
-                  </button>
-                </div>
-              </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setSelectModal({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                Hủy
+              </button>
+              <button onClick={saveSelect} className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Lưu
+              </button>
             </div>
-        )}
+          </div>
+        </div>
+      )}
 
-        {/* ===== Modal: Confirm delete ===== */}
-        {deleteConfirm.open && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-              <div className="bg-white w-full max-w-md rounded-lg shadow-xl p-5">
-                <div className="mb-3">
-                  <h3 className="text-lg font-semibold">Xác nhận xoá</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {deleteConfirm.type === 'group'
-                        ? 'Xoá nhóm sẽ xoá cả các lựa chọn bên trong. Bạn chắc chứ?'
-                        : 'Bạn chắc chắn muốn xoá lựa chọn này?'}
-                  </p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setDeleteConfirm({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                    Hủy
-                  </button>
-                  <button
-                      onClick={deleteConfirm.type === 'group' ? deleteGroup : deleteSelect}
-                      className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
-                    Xoá
-                  </button>
-                </div>
-              </div>
+      {/* ===== Modal: Confirm delete ===== */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-xl p-5">
+            <div className="mb-3">
+              <h3 className="text-lg font-semibold">Xác nhận xoá</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {deleteConfirm.type === 'group'
+                  ? 'Xoá nhóm sẽ xoá cả các lựa chọn bên trong. Bạn chắc chứ?'
+                  : 'Bạn chắc chắn muốn xoá lựa chọn này?'}
+              </p>
             </div>
-        )}
-      </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm({ open: false })} className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                Hủy
+              </button>
+              <button
+                onClick={deleteConfirm.type === 'group' ? deleteGroup : deleteSelect}
+                className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Xoá
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -617,15 +618,15 @@ function QuickAddSelectNames({ onAdd }: { onAdd: (names: string) => void }) {
     setVal('');
   };
   return (
-      <div className="flex items-center gap-2">
-        <input
-            value={val}
-            onChange={e => setVal(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }}
-            placeholder="Nhập tên lựa chọn, ví dụ: Đỏ, Xanh"
-            className="border rounded px-2 py-1 w-full"
-        />
-        <button onClick={commit} className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">Thêm</button>
-      </div>
+    <div className="flex items-center gap-2">
+      <input
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }}
+        placeholder="Nhập tên lựa chọn, ví dụ: Đỏ, Xanh"
+        className="border rounded px-2 py-1 w-full"
+      />
+      <button onClick={commit} className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">Thêm</button>
+    </div>
   );
 }
