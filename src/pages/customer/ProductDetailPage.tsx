@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import type { Product, ProductVariant, Review } from '../../types/product';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
+import type { Product, ProductVariant } from '../../types/product';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useRecentlyViewed } from '../../contexts/RecentlyViewedContext';
@@ -8,7 +8,7 @@ import ProductReviews from './ProductReviews';
 import ProductCarousel from '../../components/customer/ProductCarousel';
 import ProductQA from '../../components/customer/ProductQA';
 import StarRating from './StarRating';
-import { Heart, ShoppingCart, Info, MessageSquare, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Info, MessageSquare, Star, X } from 'lucide-react';
 import Breadcrumb from '../../components/customer/Breadcrumb';
 import ProductImageGallery from '../../components/customer/ProductImageGallery';
 import SocialShareButtons from '../../components/customer/SocialShareButtons';
@@ -16,13 +16,51 @@ import StockNotificationForm from '../../components/customer/StockNotificationFo
 import httpClient from '../../utils/HttpClient.ts';
 import VariantOptionSelector from '../../components/customer/VariantOptionSelect.tsx';
 
-// Interface cho images-map response
-interface ImagesMap {
-    [key: string]: string; // key: "0" hoặc variantId (string), value: filename
+// --- Component Modal Xác Nhận ---
+interface ConfirmationModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    message: string;
 }
 
-// Custom hook để fetch product data
-const useProductDetail = (productId: number | null) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fadeIn">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <X size={24} />
+                </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-gray-600 mb-6">{message}</p>
+                <div className="flex justify-end space-x-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-medium transition-colors"
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors"
+                    >
+                        Đồng ý
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Main Component ---
+const ProductDetailPage: React.FC = () => {
+    const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate(); // Khởi tạo hook navigate
+    const { addToCart } = useCart();
+    const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const { addProductToHistory } = useRecentlyViewed();
     const [product, setProduct] = useState<Product | null>(null);
     const [variants, setVariants] = useState<ProductVariant[]>([]);
@@ -30,6 +68,9 @@ const useProductDetail = (productId: number | null) => {
     const [imagesMap, setImagesMap] = useState<ImagesMap | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // State cho modal xác nhận wishlist
+    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
     useEffect(() => {
         if (!productId || Number.isNaN(productId)) {
@@ -271,34 +312,39 @@ const ProductDetailPage: React.FC = () => {
         }
     }, [product, selectedVariant, quantity, addToCart, showNotification]);
 
-    const handleWishlistClick = useCallback(async () => {
+    // Xử lý khi nhấn nút trái tim
+    const handleWishlistClick = () => {
         if (!product) return;
-        
-        const variantToUse = selectedVariant || variants[0];
-        if (!variantToUse) {
-            console.warn('Không có variant để thêm vào wishlist');
-            return;
+        if (isInWishlist(product.id)) {
+            removeFromWishlist(product.id);
+        } else {
+            setIsWishlistModalOpen(true);
         }
-        
-        const variantId = variantToUse.id;
-        try {
-            if (isInWishlist(variantId)) {
-                await removeFromWishlist(variantId);
-                showNotification('Đã xóa khỏi danh sách yêu thích');
-            } else {
-                await addToWishlist(variantId, product, variantToUse);
-                showNotification('Đã thêm vào danh sách yêu thích');
-            }
-        } catch (err) {
-            console.error('Lỗi khi cập nhật wishlist:', err);
-            showNotification('Có lỗi xảy ra. Vui lòng thử lại.');
-        }
-    }, [product, selectedVariant, variants, isInWishlist, addToWishlist, removeFromWishlist, showNotification]);
+    };
 
-    // Memoized computed values
-    const isOutOfStock = useMemo(
-        () => selectedVariant ? selectedVariant.stockQuantity <= 0 : true,
-        [selectedVariant]
+    // Hàm thực sự thêm vào wishlist và chuyển trang khi người dùng đồng ý
+    const confirmAddToWishlist = () => {
+        if (product) {
+            addToWishlist(product.id);
+            setIsWishlistModalOpen(false);
+            // Chuyển hướng đến trang Wishlist
+            navigate('/account/wishlist');
+        }
+    };
+
+    const isOutOfStock = selectedVariant ? selectedVariant.stockQuantity <= 0 : true;
+    const productUrl = window.location.href;
+
+    const TabButton = ({ id, label, icon }: { id: string; label: string; icon: React.ReactNode }) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-2 px-4 py-3 font-semibold rounded-t-lg transition-colors ${
+                activeTab === id ? 'bg-white text-indigo-600' : 'bg-transparent text-gray-500 hover:bg-gray-100'
+            }`}
+        >
+            {icon}
+            {label}
+        </button>
     );
 
     const productUrl = useMemo(() => window.location.href, []);
@@ -525,18 +571,8 @@ const ProductDetailPage: React.FC = () => {
                                 Thêm vào giỏ
                             </button>
                         )}
-                        <button
-                            onClick={handleWishlistClick}
-                            className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={isWishlisted ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
-                            disabled={variants.length === 0}
-                            aria-label={isWishlisted ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
-                        >
-                            <Heart
-                                className={`w-6 h-6 transition-colors ${
-                                    isWishlisted ? 'text-red-500 fill-current' : 'text-gray-500'
-                                }`}
-                            />
+                        <button onClick={handleWishlistClick} className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" title={isInWishlist(product.id) ? "Bỏ yêu thích" : "Thêm vào yêu thích"}>
+                             <Heart className={`w-6 h-6 ${isInWishlist(product.id) ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
                         </button>
                     </div>
 
@@ -579,6 +615,14 @@ const ProductDetailPage: React.FC = () => {
 
             <ProductCarousel title="Có thể bạn cũng thích" products={relatedProducts} />
 
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isWishlistModalOpen}
+                onClose={() => setIsWishlistModalOpen(false)}
+                onConfirm={confirmAddToWishlist}
+                title="Thêm vào danh sách yêu thích"
+                message={`Bạn có chắc chắn muốn thêm "${product.name}" vào danh sách yêu thích không?`}
+            />
         </div>
     );
 };
