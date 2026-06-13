@@ -11,4 +11,5 @@ export interface UserDTO {
     createdDate?: Date;
     lastModifiedBy?: string;
     lastModifiedDate?: Date;
+    imageUrl: string;
 }

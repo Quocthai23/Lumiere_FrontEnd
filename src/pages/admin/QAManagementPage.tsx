@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axiosClient from '../../api/axiosClient';
 import type { Question, Answer } from '../../types/qa';
 import { Link } from 'react-router-dom';
 import { MessageSquare, CornerDownRight } from 'lucide-react';
+import { qaApi } from '../../api/qaApi';
+import { productAnswerApi } from '../../api/productAnswerApi';
 
 // Giả định kiểu Question được mở rộng để chứa thông tin sản phẩm
 interface QuestionWithProduct extends Question {
@@ -19,12 +20,39 @@ const QAManagementPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [replyText, setReplyText] = useState('');
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
     const fetchQuestions = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get('/qas?_expand=product');
-            setQuestions(response.data || []);
+            const result = await qaApi.getAllQuestions(0, 100);
+            
+            // Fetch product answers để hiển thị câu trả lời
+            let productAnswers: any[] = [];
+            try {
+                productAnswers = await productAnswerApi.getAllProductAnswers();
+            } catch (err) {
+                console.warn('Không thể tải danh sách câu trả lời:', err);
+            }
+            
+            // Map product answers vào questions
+            const questionsWithAnswers = (result.content || []).map((question: QuestionWithProduct) => {
+                const answers = productAnswers
+                    .filter(a => a.questionId === question.id)
+                    .map(a => ({
+                        id: a.id,
+                        answerText: a.answerText,
+                        author: a.author || 'Lumiere Store',
+                        createdAt: a.createdAt || new Date().toISOString()
+                    }));
+                
+                return {
+                    ...question,
+                    answers: answers.length > 0 ? answers : question.answers
+                };
+            });
+            
+            setQuestions(questionsWithAnswers);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách câu hỏi.');
@@ -38,26 +66,43 @@ const QAManagementPage: React.FC = () => {
         fetchQuestions();
     }, []);
 
-    const handleReplySubmit = (questionId: number) => {
+    const handleReplySubmit = async (questionId: number) => {
         if (!replyText.trim()) return;
 
-        // Mock logic: In a real app, this would be a POST request to an answers endpoint
-        console.log(`Replying to question ${questionId}: ${replyText}`);
-        const newAnswer: Answer = {
-            id: Date.now(),
-            author: 'Lumiere Store',
-            answerText: replyText,
-            createdAt: new Date().toISOString()
-        };
+        setIsSubmittingReply(true);
+        try {
+            // Tạo product answer mới
+            debugger
 
-        setQuestions(questions.map(q => 
-            q.id === questionId 
-                ? { ...q, answers: [...q.answers, newAnswer] } 
-                : q
-        ));
+            const newAnswer = await productAnswerApi.createProductAnswer({
+                questionId: questionId,
+                answerText: replyText,
+                author: 'Lumiere Store'
+            });
 
-        setReplyingTo(null);
-        setReplyText('');
+            // Cập nhật state với câu trả lời mới
+            setQuestions(questions.map(q => 
+                q.id === questionId 
+                    ? { 
+                        ...q, 
+                        answers: [...q.answers, {
+                            id: newAnswer.id!,
+                            answerText: newAnswer.answerText,
+                            author: newAnswer.author || 'Lumiere Store',
+                            createdAt: newAnswer.createdAt || new Date().toISOString()
+                        }]
+                    } 
+                    : q
+            ));
+
+            setReplyingTo(null);
+            setReplyText('');
+        } catch (err) {
+            console.error('Lỗi khi gửi câu trả lời:', err);
+            alert('Không thể gửi câu trả lời. Vui lòng thử lại.');
+        } finally {
+            setIsSubmittingReply(false);
+        }
     };
     
     const startReplying = (questionId: number) => {
@@ -118,8 +163,23 @@ const QAManagementPage: React.FC = () => {
                                                 className="w-full p-2 border rounded-md mb-2"
                                             />
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleReplySubmit(q.id)} className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Gửi</button>
-                                                <button onClick={() => setReplyingTo(null)} className="px-4 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Hủy</button>
+                                                <button 
+                                                    onClick={() => handleReplySubmit(q.id)} 
+                                                    disabled={isSubmittingReply}
+                                                    className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {isSubmittingReply ? 'Đang gửi...' : 'Gửi'}
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setReplyingTo(null);
+                                                        setReplyText('');
+                                                    }} 
+                                                    disabled={isSubmittingReply}
+                                                    className="px-4 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Hủy
+                                                </button>
                                             </div>
                                          </div>
                                     </div>

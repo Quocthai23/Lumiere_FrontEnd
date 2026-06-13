@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient.ts';
 import type { Notification } from '../../types/notification';
 import { ShoppingCart, UserPlus, HelpCircle, Archive, Bell } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 // Icon mapping for different notification types
 const NotificationIcon = ({ type }: { type: Notification['type'] }) => {
@@ -34,8 +35,8 @@ const AdminNotificationDropdown: React.FC = () => {
         const fetchNotifications = async () => {
             setIsLoading(true);
             try {
-                const response = await axiosClient.get('/admin/notifications');
-                setNotifications(response.data || []);
+                const response = await httpClient.get<Notification[]>('/notifications/admin/notifications');
+                setNotifications(response || []);
             } catch (error) {
                 console.error("Failed to fetch admin notifications:", error);
             } finally {

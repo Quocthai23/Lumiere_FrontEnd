@@ -1,27 +1,19 @@
 // src/api/httpClient.ts
+import { getUser } from './AuthUtils.ts';
 
-import {getUser} from "./AuthUtils.ts";
+const BASE_URL = 'http://localhost:8080/api';
 
-const BASE_URL = "http://localhost:8080/api";
-
-/** Kiểu method hợp lệ */
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD";
-
-/** Kiểu cho headers đơn giản */
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD';
 export type HeaderDict = Record<string, string>;
-
-/** Kiểu user cơ bản lấy token (chỉnh lại nếu getUser() của bạn có cấu trúc khác) */
 type AuthUser = { token?: string };
 
-/** Lỗi HTTP có kèm status và payload đã parse */
 export class HttpError<T = unknown> extends Error {
     status: number;
     data: T;
     response: Response;
-
     constructor(status: number, data: T, response: Response, message?: string) {
         super(message ?? `HTTP ${status}`);
-        this.name = "HttpError";
+        this.name = 'HttpError';
         this.status = status;
         this.data = data;
         this.response = response;
@@ -30,72 +22,117 @@ export class HttpError<T = unknown> extends Error {
 
 const isAbsoluteUrl = (url: string) => /^https?:\/\//i.test(url);
 
-/**
- * Gọi fetch với:
- * - T: kiểu dữ liệu mong đợi từ response
- * - data: auto JSON.stringify nếu không phải GET/HEAD
- * - tự đính Bearer token nếu có
- */
+// Nhận diện body “thô” để không stringify/không set JSON content-type
+function isBodyInit(data: unknown): data is BodyInit {
+    return (
+        typeof data === 'string' ||
+        data instanceof FormData ||
+        data instanceof Blob ||
+        data instanceof ArrayBuffer ||
+        data instanceof URLSearchParams ||
+        data instanceof ReadableStream
+    );
+}
+
 export async function httpRequest<T = unknown>(
     method: HttpMethod,
     url: string,
     data?: unknown,
-    customHeaders: HeaderDict = {}
+    customHeaders: HeaderDict = {},
+    params?: Record<string, any>
 ): Promise<T> {
-    const headers: HeaderDict = {
-        "Content-Type": "application/json",
-        ...customHeaders,
-    };
+    const headers: HeaderDict = { ...customHeaders };
 
-    const user = (getUser() as AuthUser | undefined) ?? undefined;
-    const token = user?.token;
-    if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+    const tokenFromLS = localStorage.getItem('accessToken');
+    const tokenFromUser = (getUser() as AuthUser | undefined)?.token;
+    const token = tokenFromLS ?? tokenFromUser;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const willSendAsJson = !(data && isBodyInit(data));
+    if (willSendAsJson && data !== undefined && method !== 'GET' && method !== 'HEAD') {
+        headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+    } else {
+        if (headers['Content-Type']) {
+            delete headers['Content-Type'];
+        }
     }
 
-    const fullUrl = isAbsoluteUrl(url) ? url : `${BASE_URL}${url}`;
+    let fullUrl = isAbsoluteUrl(url) ? url : `${BASE_URL}${url}`;
+
+    // Build query string từ params
+    if (params && Object.keys(params).length > 0) {
+        const usp = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+
+            if (Array.isArray(value)) {
+                value.forEach(v => usp.append(key, String(v)));
+            } else {
+                usp.append(key, String(value));
+            }
+        });
+
+        fullUrl += (fullUrl.includes('?') ? '&' : '?') + usp.toString();
+    }
 
     const init: RequestInit = {
         method,
         headers,
     };
 
-    if (data !== undefined && method !== "GET" && method !== "HEAD") {
-        init.body = typeof data === "string" ? data : JSON.stringify(data);
+    if (data !== undefined && method !== 'GET' && method !== 'HEAD') {
+        const willSendAsJsonBody = !(data && isBodyInit(data));
+        init.body = willSendAsJsonBody ? JSON.stringify(data) : (data as BodyInit);
     }
 
     const resp = await fetch(fullUrl, init);
 
-    // đọc text trước rồi mới thử parse JSON để không bị lỗi khi body rỗng/không phải JSON
     const text = await resp.text();
     let parsed: any;
     try {
         parsed = text ? JSON.parse(text) : {};
     } catch {
-        parsed = text; // không phải JSON, trả về chuỗi
+        parsed = text;
     }
 
     if (!resp.ok) {
-        // Ném lỗi có kèm status + payload đã parse
         throw new HttpError(resp.status, parsed, resp, resp.statusText);
     }
 
+    // Quan trọng: trả THẲNG body đã parse, KHÔNG có .data/.headers như axios
     return parsed as T;
 }
 
-/** API gọn như bản JS cũ, nhưng có generics để typing kết quả */
 export const httpClient = {
-    get:  <T = unknown>(url: string, headers?: HeaderDict) =>
-        httpRequest<T>("GET", url, undefined, headers),
+    // GET: (url, params?, headers?)
+    get:   <T = unknown>(
+        url: string,
+        params?: Record<string, any>,
+        headers?: HeaderDict
+    ) => httpRequest<T>('GET', url, undefined, headers, params),
 
-    post: <T = unknown, B = unknown>(url: string, data?: B, headers?: HeaderDict) =>
-        httpRequest<T>("POST", url, data, headers),
+    // POST
+    post:  <T = unknown, B = unknown>(
+        url: string,
+        data?: B,
+        headers?: HeaderDict,
+        params?: Record<string, any>
+    ) => httpRequest<T>('POST', url, data, headers, params),
 
-    put:  <T = unknown, B = unknown>(url: string, data?: B, headers?: HeaderDict) =>
-        httpRequest<T>("PUT", url, data, headers),
+    // PUT
+    put:   <T = unknown, B = unknown>(
+        url: string,
+        data?: B,
+        headers?: HeaderDict,
+        params?: Record<string, any>
+    ) => httpRequest<T>('PUT', url, data, headers, params),
 
-    delete: <T = unknown>(url: string, headers?: HeaderDict) =>
-        httpRequest<T>("DELETE", url, undefined, headers),
+    // DELETE
+    delete:<T = unknown>(
+        url: string,
+        params?: Record<string, any>,
+        headers?: HeaderDict
+    ) => httpRequest<T>('DELETE', url, undefined, headers, params),
 };
 
 export default httpClient;

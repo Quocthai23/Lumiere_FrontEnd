@@ -50,6 +50,8 @@ const VoucherFormModal: React.FC<VoucherFormModalProps> = ({ isOpen, onClose, on
       usageLimit: Number(formData.usageLimit) || null, // Gửi null nếu là 0
       startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
       endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+      // Khi tạo mới, luôn set status là ACTIVE
+      status: voucher ? formData.status : 'ACTIVE',
     };
     onSave(payload);
   };
@@ -90,13 +92,15 @@ const VoucherFormModal: React.FC<VoucherFormModalProps> = ({ isOpen, onClose, on
             <label>Giới hạn lượt sử dụng (0 là không giới hạn)</label>
             <input name="usageLimit" type="number" value={formData.usageLimit} onChange={handleChange} className="mt-1 w-full p-2 border rounded" />
           </div>
-           <div>
+           {voucher && (
+            <div>
                 <label>Trạng thái</label>
                 <select name="status" value={formData.status} onChange={handleChange} className="mt-1 w-full p-2 border rounded">
                   <option value="ACTIVE">Hoạt động</option>
                   <option value="INACTIVE">Không hoạt động</option>
                 </select>
             </div>
+           )}
           <div className="flex justify-end space-x-3 mt-6">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
             <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded">Lưu</button>

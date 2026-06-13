@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Product } from '../../types/product';
 import type { Question } from '../../types/qa';
-import axiosClient from '../../api/axiosClient';
+import { qaApi } from '../../api/qaApi';
 
 interface ProductQAProps {
   product: Product;
@@ -21,8 +21,9 @@ const ProductQA: React.FC<ProductQAProps> = ({ product }) => {
     if (!product?.id) return;
     setIsLoading(true);
     try {
-      const response = await axiosClient.get(`/qas?productId.equals=${product.id}&sort=createdAt,desc`);
-      setQuestions(response.data);
+      const questionsData = await qaApi.getQuestionsByProduct(product.id);
+      setQuestions(questionsData);
+      setError(null);
     } catch (err) {
       console.error("Lỗi khi tải câu hỏi:", err);
       setError("Không thể tải phần hỏi đáp cho sản phẩm này.");
@@ -42,19 +43,18 @@ const ProductQA: React.FC<ProductQAProps> = ({ product }) => {
       return;
     }
     setIsSubmitting(true);
-    const newQuestionPayload = {
-      productId: product.id,
-      author: authorName,
-      questionText: newQuestionText,
-      answers: [], // Câu hỏi mới chưa có câu trả lời
-    };
 
     try {
-      await axiosClient.post('/qas', newQuestionPayload);
+      await qaApi.submitQuestion({
+        productId: product.id,
+        author: authorName,
+        questionText: newQuestionText
+      });
       setNewQuestionText('');
       setAuthorName('');
       await fetchQuestions(); // Tải lại danh sách câu hỏi
     } catch (err) {
+      console.error("Lỗi khi gửi câu hỏi:", err);
       alert("Gửi câu hỏi thất bại. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);

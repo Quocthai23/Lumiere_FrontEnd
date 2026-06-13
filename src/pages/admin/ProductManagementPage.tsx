@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient';
 import type { Product } from '../../types/product';
+import httpClient from "../../utils/HttpClient.ts";
 
 const ProductManagementPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -11,8 +11,8 @@ const ProductManagementPage: React.FC = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosClient.get('/products?sort=id,asc');
-      setProducts(response.data);
+      const response = await httpClient.get<Product[]>('/products?sort=id,asc');
+      setProducts(response);
       setError(null);
     } catch (err) {
       setError('Không thể tải danh sách sản phẩm.');
@@ -29,11 +29,10 @@ const ProductManagementPage: React.FC = () => {
   const handleDeleteProduct = async (productId: number) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không? Thao tác này không thể hoàn tác.')) {
         try {
-            await axiosClient.delete(`/products/${productId}`);
+            await httpClient.delete(`/products/${productId}`);
             fetchProducts();
         } catch (error) {
             console.error("Lỗi khi xóa sản phẩm:", error);
-            alert("Xóa sản phẩm thất bại. Vui lòng thử lại.");
         }
     }
   };

@@ -1,3 +1,5 @@
+import type {User} from "./types.ts";
+
 export interface Customer {
     id: number;
     firstName?: string;
@@ -7,4 +9,5 @@ export interface Customer {
     address?: string;
     tier?: 'GOLD' | 'SILVER' | 'BRONZE';
     loyaltyPoints?: number;
+    user?: User
 }

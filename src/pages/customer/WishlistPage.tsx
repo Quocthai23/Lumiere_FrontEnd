@@ -1,60 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../../contexts/WishlistContext';
-import axiosClient from '../../api/axiosClient';
-import type { Product } from '../../types/product';
-import ProductCard from '../../components/customer/ProductCard';
+import WishlistCard from '../../components/customer/WishlistCard';
+import { Heart } from 'lucide-react';
 
 const WishlistPage: React.FC = () => {
-  const { wishlist, wishlistCount } = useWishlist();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchWishlistProducts = async () => {
-      if (wishlist.length === 0) {
-        setProducts([]);
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        // In a real app, you might have an endpoint like /products?ids=1,2,3
-        // For mock API, we fetch all and filter.
-        const response = await axiosClient.get('/products');
-        const allProducts: Product[] = response.data;
-        const wishlistProducts = allProducts.filter(p => wishlist.includes(p.id));
-        setProducts(wishlistProducts);
-      } catch (error) {
-        console.error("Không thể tải sản phẩm trong wishlist:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchWishlistProducts();
-  }, [wishlist]);
-
-  if (isLoading) {
-    return <div className="text-center py-20">Đang tải danh sách yêu thích...</div>;
-  }
+  const { wishlistItems, wishlistCount, removeFromWishlist } = useWishlist();
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">Danh sách Yêu thích ({wishlistCount})</h2>
-      {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {products.map(product => (
-            <ProductCard key={product.id} product={product} />
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Danh sách Yêu thích</h1>
+        <p className="mt-2 text-lg text-gray-500">Các sản phẩm bạn đã lưu lại ({wishlistCount})</p>
+      </div>
+
+      {wishlistItems.length > 0 ? (
+        <div className="space-y-5">
+          {wishlistItems.map(item => (
+            <WishlistCard
+              key={item.id}
+              item={item}
+              onRemove={removeFromWishlist}
+            />
           ))}
         </div>
       ) : (
-         <div className="text-center py-20 bg-gray-50 rounded-xl">
-            <h3 className="text-2xl font-semibold text-gray-700">Danh sách trống</h3>
-            <p className="text-gray-500 mt-2 mb-6">Lưu lại những sản phẩm bạn yêu thích để xem lại sau nhé.</p>
-            <Link to="/products" className="inline-block bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700">
-                Khám phá sản phẩm
-            </Link>
+        <div className="text-center py-20 bg-gray-50 rounded-xl">
+          <Heart className="mx-auto h-24 w-24 text-gray-300" />
+          <h3 className="text-2xl font-semibold text-gray-700 mt-6">Danh sách trống</h3>
+          <p className="text-gray-500 mt-2 mb-6">Lưu lại những sản phẩm bạn yêu thích để xem lại sau nhé.</p>
+          <Link 
+            to="/products" 
+            className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-8 rounded-full hover:shadow-lg transition-all transform hover:scale-105"
+          >
+            Khám phá sản phẩm
+          </Link>
         </div>
       )}
     </div>

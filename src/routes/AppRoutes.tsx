@@ -26,6 +26,8 @@ import AddressPage from '../pages/customer/AddressPage';
 import ComparisonPage from '../pages/customer/ComparisonPage';
 import LoyaltyPage from '../pages/customer/LoyaltyPage';
 import NotificationsPage from '../pages/customer/NotificationsPage';
+import CustomerVoucherPage from '../pages/customer/CustomerVoucherPage';
+import FlashSaleDetailPage from '../pages/customer/FlashSaleDetailPage';
 
 // Admin Pages
 import DashboardPage from '../pages/admin/DashboardPage';
@@ -45,6 +47,8 @@ import ReviewManagementPage from '../pages/admin/ReviewManagementPage';
 import QAManagementPage from '../pages/admin/QAManagementPage';
 import CollectionManagementPage from '../pages/admin/CollectionManagementPage'; // Import trang mới
 import AdminCollectionEditPage from '../pages/admin/AdminCollectionEditPage'; // Import trang mới
+import ContactManagementPage from '../pages/admin/ContactManagementPage';
+import AdminFlashSalePage from '../pages/admin/AdminFlashSalePage';
 
 
 // Auth Pages
@@ -67,7 +71,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/" element={<CustomerLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="products" element={<ProductPage />} />
-                    <Route path="products/:slug" element={<ProductDetailPage />} />
+                    <Route path="products/:id" element={<ProductDetailPage />} />
                     <Route path="collections" element={<CollectionsPage />} />
                     <Route path="collections/:slug" element={<CollectionDetailPage />} />
                     <Route path="cart" element={<CartPage />} />
@@ -75,6 +79,8 @@ const AppRoutes: React.FC = () => {
                     <Route path="contact" element={<ContactPage />} />
                     <Route path="search" element={<SearchResultsPage />} />
                     <Route path="compare" element={<ComparisonPage />} />
+                    <Route path="vouchers" element={<CustomerVoucherPage />} />
+                    <Route path="flash-sales/:id" element={<FlashSaleDetailPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="order-confirmation" element={<OrderConfirmationPage />} />
                 </Route>
@@ -119,9 +125,11 @@ const AppRoutes: React.FC = () => {
                         <Route path="notifications" element={<AdminNotificationsPage />} />
                         <Route path="reviews" element={<ReviewManagementPage />} />
                         <Route path="qa" element={<QAManagementPage />} />
+                        <Route path="contacts" element={<ContactManagementPage />} />
                         <Route path="collections" element={<CollectionManagementPage />} /> {/* Thêm route mới */}
                         <Route path="collections/new" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}
                         <Route path="collections/edit/:collectionId" element={<AdminCollectionEditPage />} /> {/* Thêm route mới */}
+                        <Route path="flash-sales" element={<AdminFlashSalePage />} />
                     </Route>
                 </Route>
 

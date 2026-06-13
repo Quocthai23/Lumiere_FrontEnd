@@ -26,10 +26,13 @@ export interface Order {
   paymentStatus: 'PAID' | 'UNPAID' | 'REFUNDED';
   fulfillmentStatus: 'FULFILLED' | 'UNFULFILLED' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'FAILED';
   totalAmount: number;
+  shippingCost?: number;
   currency: string;
   note?: string;
   placedAt: string;
   orderItems?: OrderItem[]; 
   paymentMethod?: string;
   orderStatusHistory?: OrderStatusHistory[];
+  canReview?: boolean;
+  shippingInfo?: string; // JSON string chứa thông tin giao hàng
 }

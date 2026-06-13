@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '../../api/axiosClient';
 import type { Collection } from '../../types/collection';
-import { PlusCircle, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, Trash2, Edit } from 'lucide-react';
+import httpClient from "../../utils/HttpClient.ts";
 
 const CollectionManagementPage: React.FC = () => {
     const [collections, setCollections] = useState<Collection[]>([]);
@@ -13,8 +14,8 @@ const CollectionManagementPage: React.FC = () => {
         const fetchCollections = async () => {
             setIsLoading(true);
             try {
-                const response = await axiosClient.get('/collections');
-                setCollections(response.data || []);
+                const response = await httpClient.get<Collection[]>('/collections');
+                setCollections(response || []);
                 setError(null);
             } catch (err) {
                 setError('Không thể tải danh sách bộ sưu tập.');

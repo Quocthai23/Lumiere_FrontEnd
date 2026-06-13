@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../../api/axiosClient';
-import type { Address } from '../../types/address';
+import type { Address, CustomerInfoDTO } from '../../types/address';
 import AddressFormModal from '../../components/customer/AddressFormModal';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -16,11 +16,51 @@ const AddressPage: React.FC = () => {
     // For this mock setup, we'll assume customerId is 1.
     const MOCK_CUSTOMER_ID = 1; 
 
+    // Map backend DTO to frontend Address format
+    const mapBackendToFrontend = (dto: CustomerInfoDTO): Address => {
+        return {
+            id: dto.id,
+            customerId: dto.customerId,
+            fullName: dto.fullName,
+            phone: dto.phone,
+            email: dto.email,
+            provinceName: dto.provinceName,
+            districtName: dto.districtName,
+            wardName: dto.wardName,
+            addressLine: dto.addressLine,
+            companyName: dto.companyName,
+            taxCode: dto.taxCode,
+            note: dto.note,
+            isDefault: dto.isDefault || false,
+        };
+    };
+
+    // Map frontend Address to backend DTO format
+    const mapFrontendToBackend = (address: Address): CustomerInfoDTO => {
+        return {
+            id: address.id,
+            customerId: address.customerId,
+            fullName: address.fullName,
+            phone: address.phone,
+            email: address.email,
+            provinceName: address.provinceName,
+            districtName: address.districtName,
+            wardName: address.wardName,
+            addressLine: address.addressLine,
+            companyName: address.companyName,
+            taxCode: address.taxCode,
+            note: address.note,
+            isDefault: address.isDefault || false,
+        };
+    };
+
     const fetchAddresses = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get(`/addresses?customerId.equals=${MOCK_CUSTOMER_ID}`);
-            setAddresses(response.data);
+            const response = await axiosClient.get(`/customer-infos/customer/${MOCK_CUSTOMER_ID}`);
+            // Map backend DTOs to frontend Address format
+            const mappedAddresses = response.data.map((dto: CustomerInfoDTO) => mapBackendToFrontend(dto));
+            setAddresses(mappedAddresses);
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách địa chỉ.');
@@ -50,12 +90,15 @@ const AddressPage: React.FC = () => {
     };
 
     const handleSaveAddress = async (addressData: Omit<Address, 'id' | 'customerId'> & { id?: number }) => {
-        const payload = { ...addressData, customerId: MOCK_CUSTOMER_ID };
+        // Map frontend format to backend DTO
+        const addressWithCustomerId: Address = { ...addressData, customerId: MOCK_CUSTOMER_ID };
+        const payload = mapFrontendToBackend(addressWithCustomerId);
+        
         try {
-            if (editingAddress) {
-                await axiosClient.put(`/addresses/${editingAddress.id}`, payload);
+            if (editingAddress && editingAddress.id) {
+                await axiosClient.put(`/customer-infos/${editingAddress.id}`, payload);
             } else {
-                await axiosClient.post('/addresses', payload);
+                await axiosClient.post('/customer-infos', payload);
             }
             handleCloseModal();
             fetchAddresses();
@@ -68,7 +111,7 @@ const AddressPage: React.FC = () => {
     const handleDeleteAddress = async (addressId: number) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
             try {
-                await axiosClient.delete(`/addresses/${addressId}`);
+                await axiosClient.delete(`/customer-infos/${addressId}`);
                 fetchAddresses();
             } catch (err) {
                  console.error("Lỗi khi xóa địa chỉ:", err);
@@ -79,7 +122,7 @@ const AddressPage: React.FC = () => {
     
     const handleSetDefault = async (addressId: number) => {
         try {
-            await axiosClient.patch(`/addresses/${addressId}/set-default`, {});
+            await axiosClient.put(`/customer-infos/${addressId}/set-default?customerId=${MOCK_CUSTOMER_ID}`);
             fetchAddresses();
         } catch (err) {
             console.error("Lỗi khi đặt làm mặc định:", err);
@@ -104,10 +147,35 @@ const AddressPage: React.FC = () => {
                 <div className="space-y-4">
                     {addresses.map(addr => (
                         <div key={addr.id} className="p-4 border rounded-lg bg-white flex justify-between items-start">
-                            <div>
-                                <p className="font-bold">{addr.fullName} {addr.isDefault && <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full ml-2">Mặc định</span>}</p>
-                                <p className="text-gray-600">{addr.phone}</p>
-                                <p className="text-gray-600">{addr.street}, {addr.city}</p>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <p className="font-bold">{addr.fullName}</p>
+                                    {addr.isDefault && <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Mặc định</span>}
+                                </div>
+                                <p className="text-gray-600 mb-1">
+                                    <span className="font-medium">Điện thoại:</span> {addr.phone}
+                                </p>
+                                {addr.email && (
+                                    <p className="text-gray-600 mb-1">
+                                        <span className="font-medium">Email:</span> {addr.email}
+                                    </p>
+                                )}
+                                <p className="text-gray-600 mb-1">
+                                    <span className="font-medium">Địa chỉ:</span> {addr.addressLine}
+                                </p>
+                                <p className="text-gray-600 mb-1">
+                                    {addr.wardName && `${addr.wardName}, `}
+                                    {addr.districtName}, {addr.provinceName}
+                                </p>
+                                {addr.companyName && (
+                                    <p className="text-gray-600 mb-1">
+                                        <span className="font-medium">Công ty:</span> {addr.companyName}
+                                        {addr.taxCode && ` (MST: ${addr.taxCode})`}
+                                    </p>
+                                )}
+                                {addr.note && (
+                                    <p className="text-gray-500 text-sm italic mt-1">Ghi chú: {addr.note}</p>
+                                )}
                             </div>
                             <div className="flex space-x-2">
                                 {!addr.isDefault && <button onClick={() => handleSetDefault(addr.id)} className="text-sm text-gray-500 hover:text-indigo-600">Đặt làm mặc định</button>}

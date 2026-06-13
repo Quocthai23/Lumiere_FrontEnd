@@ -91,13 +91,6 @@ export enum SendStatus {
     RETRYING = "RETRYING",
 }
 
-/** Một số enum bạn dùng ở module chấm công */
-export enum WorkType {
-    KH = "KH", // Khảo sát (ví dụ)
-    TR = "TR", // Triển khai
-    TQ = "TQ", // Tổng quát / nội bộ
-}
-
 /** ===== Core security ===== */
 export interface Authority {
     name: string; // "ROLE_ADMIN", "ROLE_USER", ...
@@ -204,31 +197,6 @@ export interface OutboundNotification extends AuditedEntity {
     errorMessage?: string | null;
 }
 
-/** ===== HR / Timesheet ===== */
-export interface SalaryInfo extends AuditedEntity {
-    cusCode?: string | null;    // mã NV/CTV
-    month: number;              // 1..12
-    year: number;               // yyyy
-    totalHours?: number | null;
-    note?: string | null;
-}
-
-export interface WorkingDay extends AuditedEntity {
-    salaryInfoId: ID;
-    workDate: ISODate;
-    hours: number;              // giờ làm trong ngày
-    workType: WorkType;         // KH/TR/TQ
-    remark?: string | null;
-}
-
-export interface WorkLog extends AuditedEntity {
-    workingDayId: ID;
-    startTime?: ISODateTime | null;
-    endTime?: ISODateTime | null;
-    durationHours?: number | null;
-    description?: string | null;
-}
-
 /** ===== Promotion / Voucher ===== */
 export interface PromotionConfig extends AuditedEntity {
     code: string;
@@ -280,3 +248,16 @@ export interface ApiError {
     message?: string;
     data?: unknown;
 }
+
+// src/types/attachment.ts
+export interface AttachmentDTO {
+    id?: number;
+    fileName: string;
+    contentType: string;
+    size: number;          // bytes
+    url: string;           // đường dẫn ảnh để preview
+    checksum?: string | null;
+    createdAt: string;     // ISO
+    productId?: number;
+}
+

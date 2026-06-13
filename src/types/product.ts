@@ -1,10 +1,13 @@
+import type {AttachmentDTO} from "./types.ts";
+
 export interface Review {
   id: number;
   productId: number;
-  rating: number;
+  rating: number | string; // Có thể là number hoặc enum string (ONE, TWO, THREE, FOUR, FIVE)
   author: string;
   comment: string;
   createdAt: string;
+  reply?: string; // Câu trả lời từ cửa hàng
 }
 
 export interface ProductVariant {
@@ -18,7 +21,10 @@ export interface ProductVariant {
   stockQuantity: number;
   isDefault: boolean;
   color?: string; 
-  size?: string; // Add size property
+  size?: string;
+  urlImage?: string;
+  product?: Product;
+  promotionPrice?: number;
 }
 
 export interface Product {
@@ -30,10 +36,10 @@ export interface Product {
   status: string;
   createdAt: string;
   updatedAt: string;
-  category: string; 
+  categoryId: string,
   material?: string; // Add material property
   variants?: ProductVariant[];
   averageRating: number;
   reviewCount: number;
-  images?: string[]; // Thêm trường hình ảnh
+  attachmentDTOS?: AttachmentDTO[];
 }
