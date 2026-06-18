@@ -293,20 +293,6 @@ const ProductDetailPage: React.FC = () => {
     };
 
     const isOutOfStock = selectedVariant ? selectedVariant.stockQuantity <= 0 : true;
-    const productUrl = window.location.href;
-
-    const TabButton = ({ id, label, icon }: { id: string; label: string; icon: React.ReactNode }) => (
-        <button
-            onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-3 font-semibold rounded-t-lg transition-colors ${
-                activeTab === id ? 'bg-white text-indigo-600' : 'bg-transparent text-gray-500 hover:bg-gray-100'
-            }`}
-        >
-            {icon}
-            {label}
-        </button>
-    );
-
     const productUrl = useMemo(() => window.location.href, []);
 
     // Helper để build URL ảnh từ filename
