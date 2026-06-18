@@ -12,7 +12,8 @@ const OrderInvoiceButton: React.FC<Props> = ({ orderId }) => {
             // Sử dụng endpoint mới từ backend: GET /orders/{id}/invoice
             // Endpoint này trả về blob (Excel file), cần dùng fetch trực tiếp
             const token = localStorage.getItem('accessToken');
-            const response = await fetch(`http://localhost:8080/api/orders/${orderId}/invoice`, {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+            const response = await fetch(`${baseUrl}/orders/${orderId}/invoice`, {
                 method: 'GET',
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',

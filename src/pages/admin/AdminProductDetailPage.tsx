@@ -56,6 +56,7 @@ const AdminProductDetailPage: React.FC = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingVariant, setEditingVariant] = useState<Partial<ProductVariant> | null>(null);
+    const [deletedVariantIds, setDeletedVariantIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (!isCreating) {
@@ -140,6 +141,15 @@ const AdminProductDetailPage: React.FC = () => {
                 savedProduct = await httpClient.put<Product>(`/products/${productId}`, productPayload);
             }
 
+            // Xóa các variant đã bị click xóa trước khi lưu/cập nhật
+            for (const id of deletedVariantIds) {
+                try {
+                    await httpClient.delete(`/product-variants/${id}`);
+                } catch (e) {
+                    console.error("Lỗi khi xóa variant id " + id, e);
+                }
+            }
+
             // Save variants và gán OptionVariant nếu có optionSelectIds
             for (const v of variants) {
                 const variantPayload = { ...v, product: { id: savedProduct.id } };
@@ -222,6 +232,9 @@ const AdminProductDetailPage: React.FC = () => {
 
     const handleDeleteVariant = (variantToDelete: Partial<ProductVariant>) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa phiên bản này?')) {
+            if (variantToDelete.id && Number(variantToDelete.id) > 0) {
+                setDeletedVariantIds(prev => [...prev, Number(variantToDelete.id)]);
+            }
             setVariants(variants.filter(v => v.sku !== variantToDelete.sku));
         }
     };

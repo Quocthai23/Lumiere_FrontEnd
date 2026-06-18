@@ -340,9 +340,9 @@ const CartPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
                 <div className="lg:col-span-8 space-y-5">
-                    {cartItems.map(item => (
+                    {cartItems.filter(item => item && item.variant).map(item => (
                         <CartItemCard 
-                            key={item?.variant?.id}
+                            key={item.id ? `cart-item-${item.id}` : `variant-${item.variant.id}-${Math.random()}`}
                             item={item}
                             onRemove={removeFromCart}
                             onUpdateQuantity={updateQuantity}

@@ -30,7 +30,7 @@ const CustomerVoucherPage: React.FC = () => {
             if (!userId) {
                 const userResponse = await httpClient.get<UserDTO>('/account');
                 const currentUserId = userResponse.id;
-                setUserId(currentUserId);
+                setUserId(currentUserId ?? null);
 
                 if (!currentUserId) {
                     console.warn('Không tìm thấy userId');
@@ -51,8 +51,9 @@ const CustomerVoucherPage: React.FC = () => {
             }
 
             // Lấy danh sách voucher available với pagination
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
             const response = await fetch(
-                `http://localhost:8080/api/vouchers?availableOnly=true&page=${page}&size=${pageSize}`,
+                `${baseUrl}/vouchers?availableOnly=true&page=${page}&size=${pageSize}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,

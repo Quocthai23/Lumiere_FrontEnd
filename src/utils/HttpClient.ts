@@ -1,7 +1,7 @@
 // src/api/httpClient.ts
 import { getUser } from './AuthUtils.ts';
 
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD';
 export type HeaderDict = Record<string, string>;

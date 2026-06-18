@@ -6,9 +6,8 @@ import { useWishlist } from '../../contexts/WishlistContext';
 import { useRecentlyViewed } from '../../contexts/RecentlyViewedContext';
 import ProductReviews from './ProductReviews';
 import ProductCarousel from '../../components/customer/ProductCarousel';
-import ProductQA from '../../components/customer/ProductQA';
 import StarRating from './StarRating';
-import { Heart, ShoppingCart, Info, MessageSquare, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Info, Star } from 'lucide-react';
 import Breadcrumb from '../../components/customer/Breadcrumb';
 import ProductImageGallery from '../../components/customer/ProductImageGallery';
 import SocialShareButtons from '../../components/customer/SocialShareButtons';
@@ -100,7 +99,7 @@ const TabButton: React.FC<{
     icon: React.ReactNode;
     isActive: boolean;
     onClick: () => void;
-}> = React.memo(({ id, label, icon, isActive, onClick }) => (
+}> = React.memo(({ label, icon, isActive, onClick }) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-2 px-4 py-3 font-semibold rounded-t-lg transition-colors ${
@@ -127,10 +126,7 @@ const ProductDetailPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('description');
     const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
-    // State cho reviews
-    const [reviews, setReviews] = useState<Review[]>([]);
-    const [reviewsLoading, setReviewsLoading] = useState(false);
-    const [reviewsError, setReviewsError] = useState<string | null>(null);
+
 
     // Set default variant khi variants được load
     useEffect(() => {
@@ -166,40 +162,7 @@ const ProductDetailPage: React.FC = () => {
         };
     }, []);
 
-    // Fetch reviews từ API
-    useEffect(() => {
-        if (!productId || Number.isNaN(productId)) {
-            return;
-        }
 
-        const fetchReviews = async () => {
-            setReviewsLoading(true);
-            setReviewsError(null);
-            
-            try {
-                // Fetch API: GET /api/product-reviews/by-product/{productId}?approvedOnly=true&page=0&size=10
-                // API trả về List<ProductReviewDTO> trực tiếp (mảng)
-                const response = await httpClient.get<Review[]>(
-                    `/product-reviews/by-product/${productId}`,
-                    {
-                        approvedOnly: true,
-                        page: 0,
-                        size: 10
-                    }
-                );
-                
-                setReviews(Array.isArray(response) ? response : []);
-                console.log('Đã fetch reviews thành công:', response);
-            } catch (err) {
-                console.error('Lỗi khi fetch reviews:', err);
-                setReviewsError('Không thể tải đánh giá. Vui lòng thử lại.');
-            } finally {
-                setReviewsLoading(false);
-            }
-        };
-
-        fetchReviews();
-    }, [productId]);
 
     // Memoized handlers để tránh re-render không cần thiết
     const handleQuantityChange = useCallback((amount: number) => {
@@ -311,7 +274,8 @@ const ProductDetailPage: React.FC = () => {
             return filename;
         }
         // Build URL từ filename
-        return `http://localhost:8080/api/attachments/${filename}`;
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+        return `${baseUrl}/attachments/${filename}`;
     }, []);
 
     const imageUrls = useMemo(() => {
@@ -350,13 +314,13 @@ const ProductDetailPage: React.FC = () => {
         if (selectedVariant?.urlImage) {
             const variantImage = [selectedVariant.urlImage];
             const productImages = product?.attachmentDTOS
-                ?.map(pa => pa?.attachment?.url)
+                ?.map(pa => pa?.url)
                 .filter((url): url is string => !!url && url !== selectedVariant.urlImage) || [];
             return [...variantImage, ...productImages];
         }
         
         const productImages = product?.attachmentDTOS
-            ?.map(pa => pa?.attachment?.url)
+            ?.map(pa => pa?.url)
             .filter((url): url is string => !!url) || [];
         
         return productImages;
@@ -423,7 +387,7 @@ const ProductDetailPage: React.FC = () => {
                 {imageUrls.length > 0 ? (
                     <ProductImageGallery 
                         images={imageUrls} 
-                        altText={product.name}
+                        productName={product.name}
                         imagesMap={imagesMap}
                         buildImageUrl={buildImageUrl}
                         selectedVariantId={selectedVariant?.id}

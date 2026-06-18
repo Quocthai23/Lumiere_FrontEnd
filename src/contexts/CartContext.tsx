@@ -74,12 +74,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const backendItems = resp as any[];
 
         // Map DTO -> CartItem
-        const mapped: CartItem[] = backendItems.map(dto => ({
-          id: dto.id,
-          product: dto.variant?.product || dto.product,           // product nằm trong variant.product
-          variant: dto.variant,           // variant object từ response
-          quantity: dto.quantity
-        }));
+        const mapped: CartItem[] = backendItems
+          .filter(dto => dto.variant != null)
+          .map(dto => ({
+            id: dto.id,
+            product: dto.variant?.product || dto.product,           // product nằm trong variant.product
+            variant: dto.variant,           // variant object từ response
+            quantity: dto.quantity
+          }));
 
         setCartItems(mapped);
       } catch (e) {
@@ -377,8 +379,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: true, message: `Đã áp dụng ${points.toLocaleString('vi-VN')} điểm.` };
   };
 
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const subtotal = cartItems.reduce((total, item) => {
+  const cartCount = cartItems.filter(item => item && item.variant).reduce((total, item) => total + item.quantity, 0);
+  const subtotal = cartItems.filter(item => item && item.variant).reduce((total, item) => {
     const itemPrice = (item?.variant?.promotionPrice != null && item?.variant?.promotionPrice < item?.variant?.price)
       ? item.variant.promotionPrice
       : item?.variant?.price;

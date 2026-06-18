@@ -40,7 +40,8 @@ class StompClientService {
     // LƯU Ý: Request /ws/info (SockJS handshake) không thể thêm custom headers
     // Token sẽ được gửi trong STOMP CONNECT frame sau khi SockJS connection được thiết lập
     // Backend nên cho phép /ws/info không cần auth hoặc đọc token từ cookie
-    const WS_BASE_URL = 'http://localhost:8080';
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+    const WS_BASE_URL = apiBaseUrl.replace(/\/api$/, '');
     const socket = new SockJS(`${WS_BASE_URL}/ws`);
     
     // Tạo STOMP client với connect headers chứa Bearer token
