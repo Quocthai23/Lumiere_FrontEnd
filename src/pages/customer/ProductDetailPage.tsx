@@ -55,11 +55,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, 
 };
 
 // --- Main Component ---
-const ProductDetailPage: React.FC = () => {
-    const { slug } = useParams<{ slug: string }>();
-    const navigate = useNavigate(); // Khởi tạo hook navigate
-    const { addToCart } = useCart();
-    const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+const useProductDetail = (productId: number | null) => {
     const { addProductToHistory } = useRecentlyViewed();
     const [product, setProduct] = useState<Product | null>(null);
     const [variants, setVariants] = useState<ProductVariant[]>([]);
@@ -67,9 +63,6 @@ const ProductDetailPage: React.FC = () => {
     const [imagesMap, setImagesMap] = useState<ImagesMap | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // State cho modal xác nhận wishlist
-    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
     useEffect(() => {
         if (!productId || Number.isNaN(productId)) {
@@ -155,8 +148,12 @@ TabButton.displayName = 'TabButton';
 
 const ProductDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate(); // Khởi tạo hook navigate
     const { addToCart } = useCart();
     const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+
+    // State cho modal xác nhận wishlist
+    const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
 
     const productId = id ? Number(id) : null;
     const { product, variants, relatedProducts, imagesMap, isLoading, error } = useProductDetail(productId);
