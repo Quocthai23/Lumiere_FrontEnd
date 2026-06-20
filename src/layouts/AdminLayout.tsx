@@ -71,11 +71,10 @@ const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
                     <NavItem to="/admin/collections" icon={LayoutGrid}>Bộ sưu tập</NavItem>
                     <NavItem to="/admin/vouchers" icon={Ticket}>Khuyến mãi</NavItem>
                     <NavItem to="/admin/flash-sales" icon={Zap}>Flash Sale</NavItem>
-                    <NavItem to="/admin/notifications" icon={Bell}>Thông báo</NavItem>
                 </nav>
             </div>
             <div className="mt-auto p-4 border-t">
-                 <button
+                <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 font-semibold transition-all"
                 >
@@ -100,7 +99,7 @@ const AdminLayout: React.FC = () => {
         logout();
         navigate('/login');
     };
-    
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -125,11 +124,11 @@ const AdminLayout: React.FC = () => {
 
             {/* Mobile Sidebar */}
             {isMobileMenuOpen && (
-                 <div className="fixed inset-0 z-50 md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+                <div className="fixed inset-0 z-50 md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="fixed inset-0 bg-black/60"></div>
                     <div className="fixed top-0 left-0 h-full w-3/4 max-w-sm bg-gray-100/95 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
                         <SidebarContent onLinkClick={() => setIsMobileMenuOpen(false)} />
-                         <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-gray-200/50 hover:bg-gray-300/50">
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-gray-200/50 hover:bg-gray-300/50">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
@@ -145,7 +144,7 @@ const AdminLayout: React.FC = () => {
                     >
                         <Menu className="h-6 w-6" />
                     </button>
-                    
+
                     <div className="w-full flex-1">
                         <form>
                             <div className="relative">
@@ -158,7 +157,7 @@ const AdminLayout: React.FC = () => {
                             </div>
                         </form>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 md:gap-4">
                         <AdminNotificationDropdown />
                         <div className="relative" ref={userMenuRef}>
@@ -167,16 +166,16 @@ const AdminLayout: React.FC = () => {
                                     {getInitials(user?.sub)}
                                 </div>
                                 <span className="hidden md:inline text-sm font-medium">{user?.sub}</span>
-                                <ChevronDown className="h-4 w-4 hidden md:inline text-gray-500"/>
+                                <ChevronDown className="h-4 w-4 hidden md:inline text-gray-500" />
                             </button>
-                             {isUserMenuOpen && (
+                            {isUserMenuOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
                                     <div className="p-2 border-b">
                                         <p className="text-sm font-semibold">{user?.sub}</p>
                                         <p className="text-xs text-gray-500">Admin</p>
                                     </div>
                                     <div className="p-1">
-                                         <button
+                                        <button
                                             onClick={handleLogout}
                                             className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 font-medium"
                                         >

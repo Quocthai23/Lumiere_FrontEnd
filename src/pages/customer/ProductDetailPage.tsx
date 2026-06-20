@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import type { Product, ProductVariant } from '../../types/product';
 import { useCart } from '../../contexts/CartContext';
@@ -7,13 +7,15 @@ import { useRecentlyViewed } from '../../contexts/RecentlyViewedContext';
 import ProductReviews from './ProductReviews';
 import ProductCarousel from '../../components/customer/ProductCarousel';
 import StarRating from './StarRating';
-import { Heart, ShoppingCart, Info, MessageSquare, Star, X } from 'lucide-react';
+import { Heart, ShoppingCart, Info, Star, X } from 'lucide-react';
 import Breadcrumb from '../../components/customer/Breadcrumb';
 import ProductImageGallery from '../../components/customer/ProductImageGallery';
 import SocialShareButtons from '../../components/customer/SocialShareButtons';
 import StockNotificationForm from '../../components/customer/StockNotificationForm';
 import httpClient from '../../utils/HttpClient.ts';
 import VariantOptionSelector from '../../components/customer/VariantOptionSelect.tsx';
+
+export type ImagesMap = Record<string, string>;
 
 // --- Component Modal Xác Nhận ---
 interface ConfirmationModalProps {
@@ -136,9 +138,8 @@ const TabButton: React.FC<{
 }> = React.memo(({ label, icon, isActive, onClick }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-3 font-semibold rounded-t-lg transition-colors ${
-            isActive ? 'bg-white text-indigo-600' : 'bg-transparent text-gray-500 hover:bg-gray-100'
-        }`}
+        className={`flex items-center gap-2 px-4 py-3 font-semibold rounded-t-lg transition-colors ${isActive ? 'bg-white text-indigo-600' : 'bg-transparent text-gray-500 hover:bg-gray-100'
+            }`}
     >
         {icon}
         {label}
@@ -163,7 +164,7 @@ const ProductDetailPage: React.FC = () => {
     const [notification, setNotification] = useState('');
     const [activeTab, setActiveTab] = useState('description');
     const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    
+
 
 
     // Set default variant khi variants được load
@@ -209,12 +210,12 @@ const ProductDetailPage: React.FC = () => {
 
     const handleVariantChange = useCallback(async (v: ProductVariant | undefined) => {
         console.log("handleVariantChange called with:", v);
-        
+
         if (!v) {
             setSelectedVariant(undefined);
             return;
         }
-        
+
         // Nếu variant từ API có id, fetch variant đầy đủ từ server
         if (v.id) {
             try {
@@ -229,7 +230,7 @@ const ProductDetailPage: React.FC = () => {
             } catch (err) {
                 console.error('Lỗi khi fetch variant đầy đủ:', err);
             }
-            
+
             // Fallback: tìm variant đầy đủ từ danh sách variants đã có
             if (variants.length > 0) {
                 const fullVariant = variants.find(variant => variant.id === v.id);
@@ -247,7 +248,7 @@ const ProductDetailPage: React.FC = () => {
                 }
             }
         }
-        
+
         // Nếu không tìm thấy variant đầy đủ, dùng variant từ API
         console.log("Using variant from API as-is:", v);
         setSelectedVariant(v);
@@ -274,9 +275,9 @@ const ProductDetailPage: React.FC = () => {
 
     // Xử lý khi nhấn nút trái tim
     const handleWishlistClick = () => {
-        if (!product) return;
-        if (isInWishlist(product.id)) {
-            removeFromWishlist(product.id);
+        if (!product || !currentVariant) return;
+        if (isWishlisted) {
+            removeFromWishlist(currentVariant.id);
         } else {
             setIsWishlistModalOpen(true);
         }
@@ -284,8 +285,8 @@ const ProductDetailPage: React.FC = () => {
 
     // Hàm thực sự thêm vào wishlist và chuyển trang khi người dùng đồng ý
     const confirmAddToWishlist = () => {
-        if (product) {
-            addToWishlist(product.id);
+        if (product && currentVariant) {
+            addToWishlist(currentVariant.id, product, currentVariant);
             setIsWishlistModalOpen(false);
             // Chuyển hướng đến trang Wishlist
             navigate('/account/wishlist');
@@ -310,23 +311,23 @@ const ProductDetailPage: React.FC = () => {
     const imageUrls = useMemo(() => {
         console.log("Computing imageUrls - selectedVariant:", selectedVariant);
         console.log("Computing imageUrls - imagesMap:", imagesMap);
-        
+
         // Ưu tiên sử dụng imagesMap nếu có
         if (imagesMap) {
             const urls: string[] = [];
-            
+
             // Lấy ảnh chung của product (key "0")
             if (imagesMap["0"]) {
                 urls.push(buildImageUrl(imagesMap["0"]));
             }
-            
+
             // Lấy ảnh của các variants (key là variantId)
             Object.entries(imagesMap).forEach(([key, filename]) => {
                 if (key !== "0" && filename) {
                     urls.push(buildImageUrl(filename));
                 }
             });
-            
+
             // Nếu có variant được chọn, đặt ảnh của variant lên đầu
             if (selectedVariant?.id && imagesMap[selectedVariant.id.toString()]) {
                 const variantImageUrl = buildImageUrl(imagesMap[selectedVariant.id.toString()]);
@@ -334,11 +335,11 @@ const ProductDetailPage: React.FC = () => {
                 const filtered = urls.filter(url => url !== variantImageUrl);
                 return [variantImageUrl, ...filtered];
             }
-            
+
             console.log("imageUrls from imagesMap:", urls);
             return urls;
         }
-        
+
         // Fallback: sử dụng logic cũ nếu không có imagesMap
         if (selectedVariant?.urlImage) {
             const variantImage = [selectedVariant.urlImage];
@@ -347,11 +348,11 @@ const ProductDetailPage: React.FC = () => {
                 .filter((url): url is string => !!url && url !== selectedVariant.urlImage) || [];
             return [...variantImage, ...productImages];
         }
-        
+
         const productImages = product?.attachmentDTOS
             ?.map(pa => pa?.url)
             .filter((url): url is string => !!url) || [];
-        
+
         return productImages;
     }, [selectedVariant, product, imagesMap, buildImageUrl]);
 
@@ -391,11 +392,11 @@ const ProductDetailPage: React.FC = () => {
     if (isLoading) {
         return <div className="text-center py-20">Đang tải thông tin sản phẩm...</div>;
     }
-    
+
     if (error) {
         return <div className="text-center py-20 text-red-500">{error}</div>;
     }
-    
+
     if (!product) {
         return <div className="text-center py-20">Không có thông tin sản phẩm để hiển thị.</div>;
     }
@@ -414,8 +415,8 @@ const ProductDetailPage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {imageUrls.length > 0 ? (
-                    <ProductImageGallery 
-                        images={imageUrls} 
+                    <ProductImageGallery
+                        images={imageUrls}
                         productName={product.name}
                         imagesMap={imagesMap}
                         buildImageUrl={buildImageUrl}
@@ -438,8 +439,8 @@ const ProductDetailPage: React.FC = () => {
 
                     {selectedVariant && (
                         <div className="mb-4">
-                            {selectedVariant.promotionPrice != null && 
-                             selectedVariant.promotionPrice < selectedVariant.price ? (
+                            {selectedVariant.promotionPrice != null &&
+                                selectedVariant.promotionPrice < selectedVariant.price ? (
                                 <div className="flex items-center gap-3 flex-wrap">
                                     <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
                                         FLASH SALE
@@ -496,8 +497,8 @@ const ProductDetailPage: React.FC = () => {
                     <p className="text-sm font-semibold mb-6">
                         Tình trạng:
                         <span className={`ml-2 ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>
-              {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
-            </span>
+                            {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
+                        </span>
                     </p>
 
                     <div className="flex items-stretch gap-4">
@@ -518,8 +519,8 @@ const ProductDetailPage: React.FC = () => {
                                 Thêm vào giỏ
                             </button>
                         )}
-                        <button onClick={handleWishlistClick} className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" title={isInWishlist(product.id) ? "Bỏ yêu thích" : "Thêm vào yêu thích"}>
-                             <Heart className={`w-6 h-6 ${isInWishlist(product.id) ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
+                        <button onClick={handleWishlistClick} className="p-4 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" title={isWishlisted ? "Bỏ yêu thích" : "Thêm vào yêu thích"}>
+                            <Heart className={`w-6 h-6 ${isWishlisted ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
                         </button>
                     </div>
 
@@ -534,16 +535,16 @@ const ProductDetailPage: React.FC = () => {
             <div className="mt-16 bg-gray-50 p-4 rounded-lg">
                 <div className="border-b border-gray-200">
                     <nav className="-mb-px flex space-x-2" aria-label="Tabs">
-                        <TabButton 
-                            id="description" 
-                            label="Mô tả chi tiết" 
+                        <TabButton
+                            id="description"
+                            label="Mô tả chi tiết"
                             icon={<Info size={18} />}
                             isActive={activeTab === 'description'}
                             onClick={() => handleTabChange('description')}
                         />
-                        <TabButton 
-                            id="reviews" 
-                            label="Đánh giá" 
+                        <TabButton
+                            id="reviews"
+                            label="Đánh giá"
                             icon={<Star size={18} />}
                             isActive={activeTab === 'reviews'}
                             onClick={() => handleTabChange('reviews')}

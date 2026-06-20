@@ -50,7 +50,7 @@ const CheckoutPage: React.FC = () => {
       companyName: dto.companyName,
       taxCode: dto.taxCode,
       note: dto.note,
-      isDefault: dto.isDefault || false,
+      isDefault: dto.isDefault === true || (dto as any).default === true || false,
     };
   };
 
@@ -73,14 +73,21 @@ const CheckoutPage: React.FC = () => {
     };
   };
 
-  // Fetch data for logged-in user
   useEffect(() => {
     const fetchUserData = async () => {
-      if (isAuthenticated() && user && user.id) {
+      if (isAuthenticated() && user) {
         setIsLoading(true);
         try {
+          const accountResponse = await axiosClient.get('/account');
+          const userId = accountResponse.data.id;
+
+          if (!userId) {
+            setIsLoading(false);
+            return;
+          }
+
           // Lấy customer thông qua userId
-          const customerListRes = await axiosClient.get(`/customers?userId.equals=${user.id}`);
+          const customerListRes = await axiosClient.get(`/customers?userId.equals=${userId}`);
           const customerData = customerListRes.data[0];
 
           if (customerData) {
@@ -115,19 +122,21 @@ const CheckoutPage: React.FC = () => {
     setSelectedAddressId(address.id ?? null);
 
     setShippingInfo({
-      fullName: address.fullName,
-      phone: address.phone,
+      fullName: address.fullName || '',
+      phone: address.phone || '',
       street: address.addressLine || '',
       city: [address.wardName, address.districtName, address.provinceName].filter(Boolean).join(', '),
-      note: address.note || shippingInfo.note,
+      note: address.note || shippingInfo.note || '',
     });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setShippingInfo(prev => ({ ...prev, [name]: value }));
-    // Nếu người dùng tự nhập, bỏ chọn địa chỉ đã lưu
-    setSelectedAddressId(null);
+    // Nếu người dùng tự nhập (trừ ghi chú), bỏ chọn địa chỉ đã lưu
+    if (name !== 'note') {
+      setSelectedAddressId(null);
+    }
   };
 
   const handleApplyPoints = () => {
@@ -176,6 +185,12 @@ const CheckoutPage: React.FC = () => {
       const addressesRes = await axiosClient.get(`/customer-infos/customer/${customer.id}`);
       const mappedAddresses = addressesRes.data.map((dto: CustomerInfoDTO) => mapBackendToFrontend(dto));
       setAddresses(mappedAddresses);
+      
+      // Auto select the newly added address (the one with the largest ID)
+      if (mappedAddresses.length > 0) {
+        const newAddress = mappedAddresses.reduce((prev: Address, current: Address) => (prev.id! > current.id!) ? prev : current);
+        handleSelectAddress(newAddress);
+      }
     } catch (err) {
       console.error("Lỗi khi lưu địa chỉ mới:", err);
       alert("Đã xảy ra lỗi khi lưu địa chỉ mới.");
@@ -190,7 +205,7 @@ const CheckoutPage: React.FC = () => {
 
     // Validate form fields
     if (!shippingInfo.fullName || !shippingInfo.phone || !shippingInfo.street || !shippingInfo.city) {
-      setError("Vui lòng điền đầy đủ thông tin giao hàng.");
+      setError(isAuthenticated() ? "Vui lòng chọn hoặc thêm địa chỉ giao hàng." : "Vui lòng điền đầy đủ thông tin giao hàng.");
       setIsLoading(false);
       return;
     }
@@ -349,9 +364,12 @@ const CheckoutPage: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h2 className="text-2xl font-semibold mb-6">Thông tin giao hàng</h2>
 
-            {isAuthenticated() && (
+            {isAuthenticated() ? (
               <div className="mb-6 space-y-3">
-                <h3 className="font-semibold text-gray-700">Chọn địa chỉ đã lưu:</h3>
+                <h3 className="font-semibold text-gray-700">Chọn địa chỉ giao hàng:</h3>
+                {addresses.length === 0 && (
+                  <p className="text-sm text-gray-500 italic mb-2">Bạn chưa có địa chỉ lưu sẵn. Vui lòng thêm địa chỉ mới.</p>
+                )}
                 {addresses.map(addr => {
                   const fullAddress = [
                     addr.addressLine,
@@ -374,37 +392,38 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   );
                 })}
-                <button type="button" onClick={() => setAddressModalOpen(true)} className="flex items-center gap-2 text-indigo-600 font-semibold hover:underline">
+                <button type="button" onClick={() => setAddressModalOpen(true)} className="flex items-center gap-2 text-indigo-600 font-semibold hover:underline mt-2">
                   <Plus size={18} /> Thêm địa chỉ mới
                 </button>
-                <div className="my-4 border-b text-center">
-                  <span className="leading-none px-2 inline-block text-sm text-gray-500 bg-white transform translate-y-2.5">hoặc</span>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <label htmlFor="note" className="block text-sm font-medium text-gray-700">Ghi chú đơn hàng (tùy chọn)</label>
+                  <textarea id="note" name="note" rows={3} value={shippingInfo.note} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ví dụ: Giao hàng giờ hành chính..." />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Họ và tên</label>
+                  <input type="text" id="fullName" name="fullName" value={shippingInfo.fullName} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                  <input type="tel" id="phone" name="phone" value={shippingInfo.phone} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+                </div>
+                <div>
+                  <label htmlFor="street" className="block text-sm font-medium text-gray-700">Địa chỉ cụ thể</label>
+                  <input type="text" id="street" name="street" value={shippingInfo.street} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+                </div>
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">Tỉnh/Thành phố</label>
+                  <input type="text" id="city" name="city" value={shippingInfo.city} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
+                </div>
+                <div>
+                  <label htmlFor="note" className="block text-sm font-medium text-gray-700">Ghi chú (tùy chọn)</label>
+                  <textarea id="note" name="note" rows={3} value={shippingInfo.note} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" />
                 </div>
               </div>
             )}
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Họ và tên</label>
-                <input type="text" id="fullName" name="fullName" value={shippingInfo.fullName} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                <input type="tel" id="phone" name="phone" value={shippingInfo.phone} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
-              </div>
-              <div>
-                <label htmlFor="street" className="block text-sm font-medium text-gray-700">Địa chỉ cụ thể</label>
-                <input type="text" id="street" name="street" value={shippingInfo.street} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
-              </div>
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700">Tỉnh/Thành phố</label>
-                <input type="text" id="city" name="city" value={shippingInfo.city} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" required />
-              </div>
-              <div>
-                <label htmlFor="note" className="block text-sm font-medium text-gray-700">Ghi chú (tùy chọn)</label>
-                <textarea id="note" name="note" rows={3} value={shippingInfo.note} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              </div>
-            </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border">

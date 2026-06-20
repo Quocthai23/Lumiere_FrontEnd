@@ -51,10 +51,12 @@ const ProfilePage: React.FC = () => {
 
 
     const [formData, setFormData] = useState({
+        login: '',
         firstName: '',
         lastName: '',
         email: '',
-        imageUrl: ''
+        imageUrl: '',
+        langKey: 'vi'
     });
     const [infoSuccess, setInfoSuccess] = useState('');
     const [infoError, setInfoError] = useState('');
@@ -76,10 +78,12 @@ const ProfilePage: React.FC = () => {
             try {
                 const response = await axiosClient.get<UserDTO>('/account');
                 setFormData({
+                    login: response.data.login || '',
                     firstName: response.data.firstName || '',
                     lastName: response.data.lastName || '',
                     email: response.data.email || '',
-                    imageUrl: response.data.imageUrl
+                    imageUrl: response.data.imageUrl || '',
+                    langKey: response.data.langKey || 'vi'
                 });
             } catch (error) {
                 setInfoError('Không thể tải thông tin tài khoản.');

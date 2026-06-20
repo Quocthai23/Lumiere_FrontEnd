@@ -12,10 +12,7 @@ const AddressPage: React.FC = () => {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const { user } = useAuth();
 
-    // NOTE: In a real app, the customerId would come from the logged-in user context.
-    // For this mock setup, we'll assume customerId is 1.
-    const MOCK_CUSTOMER_ID = 1; 
-
+    const [customerId, setCustomerId] = useState<number | null>(null);
     // Map backend DTO to frontend Address format
     const mapBackendToFrontend = (dto: CustomerInfoDTO): Address => {
         return {
@@ -31,7 +28,7 @@ const AddressPage: React.FC = () => {
             companyName: dto.companyName,
             taxCode: dto.taxCode,
             note: dto.note,
-            isDefault: dto.isDefault || false,
+            isDefault: dto.isDefault === true || (dto as any).default === true || false,
         };
     };
 
@@ -57,8 +54,33 @@ const AddressPage: React.FC = () => {
     const fetchAddresses = async () => {
         setIsLoading(true);
         try {
-            const response = await axiosClient.get(`/customer-infos/customer/${MOCK_CUSTOMER_ID}`);
-            // Map backend DTOs to frontend Address format
+            // First get account to get userId
+            const accountResponse = await axiosClient.get('/account');
+            const userId = accountResponse.data.id;
+            
+            if (!userId) {
+                setError('Không tìm thấy thông tin người dùng.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Then get customer by userId
+            const customerResponse = await axiosClient.get(`/customers?userId.equals=${userId}`);
+            const customers = customerResponse.data || [];
+            
+            if (customers.length === 0) {
+                // If user has no customer record, set empty addresses and return
+                setAddresses([]);
+                setCustomerId(null);
+                setIsLoading(false);
+                return;
+            }
+            
+            const currentCustomerId = customers[0].id;
+            setCustomerId(currentCustomerId);
+
+            // Fetch addresses using customerId
+            const response = await axiosClient.get(`/customer-infos/customer/${currentCustomerId}`);
             const mappedAddresses = response.data.map((dto: CustomerInfoDTO) => mapBackendToFrontend(dto));
             setAddresses(mappedAddresses);
             setError(null);
@@ -71,8 +93,10 @@ const AddressPage: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchAddresses();
-    }, []);
+        if (user) {
+            fetchAddresses();
+        }
+    }, [user]);
 
     const handleOpenModalForCreate = () => {
         setEditingAddress(null);
@@ -90,8 +114,12 @@ const AddressPage: React.FC = () => {
     };
 
     const handleSaveAddress = async (addressData: Omit<Address, 'id' | 'customerId'> & { id?: number }) => {
+        if (!customerId) {
+            alert("Không tìm thấy thông tin khách hàng. Vui lòng thử lại.");
+            return;
+        }
         // Map frontend format to backend DTO
-        const addressWithCustomerId: Address = { ...addressData, customerId: MOCK_CUSTOMER_ID };
+        const addressWithCustomerId: Address = { ...addressData, customerId: customerId };
         const payload = mapFrontendToBackend(addressWithCustomerId);
         
         try {
@@ -121,8 +149,9 @@ const AddressPage: React.FC = () => {
     }
     
     const handleSetDefault = async (addressId: number) => {
+        if (!customerId) return;
         try {
-            await axiosClient.put(`/customer-infos/${addressId}/set-default?customerId=${MOCK_CUSTOMER_ID}`);
+            await axiosClient.put(`/customer-infos/${addressId}/set-default?customerId=${customerId}`);
             fetchAddresses();
         } catch (err) {
             console.error("Lỗi khi đặt làm mặc định:", err);
@@ -178,9 +207,9 @@ const AddressPage: React.FC = () => {
                                 )}
                             </div>
                             <div className="flex space-x-2">
-                                {!addr.isDefault && <button onClick={() => handleSetDefault(addr.id)} className="text-sm text-gray-500 hover:text-indigo-600">Đặt làm mặc định</button>}
+                                {!addr.isDefault && <button onClick={() => handleSetDefault(addr.id!)} className="text-sm text-gray-500 hover:text-indigo-600">Đặt làm mặc định</button>}
                                 <button onClick={() => handleOpenModalForEdit(addr)} className="text-sm text-indigo-600 hover:underline">Sửa</button>
-                                <button onClick={() => handleDeleteAddress(addr.id)} className="text-sm text-red-600 hover:underline">Xóa</button>
+                                <button onClick={() => handleDeleteAddress(addr.id!)} className="text-sm text-red-600 hover:underline">Xóa</button>
                             </div>
                         </div>
                     ))}

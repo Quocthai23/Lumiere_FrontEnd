@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import type { Notification } from '../types/notification';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../hooks/useAuth';
@@ -27,8 +28,28 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
     setIsLoading(true);
     try {
-      // Giả lập customerId = 1 cho user đã đăng nhập
-      const response = await axiosClient.get('/notifications?customerId.equals=1&sort=createdAt,desc');
+      // First get account to get userId
+      const accountResponse = await axiosClient.get('/account');
+      const userId = accountResponse.data.id;
+
+      if (!userId) {
+        setNotifications([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Then get customer by userId
+      const customerResponse = await axiosClient.get(`/customers?userId.equals=${userId}`);
+      const customers = customerResponse.data || [];
+
+      if (customers.length === 0) {
+        setNotifications([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const currentCustomerId = customers[0].id;
+      const response = await axiosClient.get(`/notifications?customerId.equals=${currentCustomerId}&sort=createdAt,desc`);
       setNotifications(response.data);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -47,7 +68,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
-  
+
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
